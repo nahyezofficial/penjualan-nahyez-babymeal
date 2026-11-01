@@ -1,12 +1,78 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penjualan Nahyez Baby Meal</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f18a35">
+  <title>Penjualan | Nahyez Baby Meal</title>
+  <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-    <h1>Penjualan Nahyez Baby Meal</h1>
-    <p>Persiapan aplikasi sedang berlangsung.</p>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <main class="app-shell">
+    <section id="loginView" class="login-layout">
+      <div class="brand-panel">
+        <div class="brand-mark">N</div>
+        <p class="eyebrow">NAHYEZ BABY MEAL</p>
+        <h1>Penjualan<br><span>lebih mudah.</span></h1>
+        <p class="brand-copy">Satu ruang kerja untuk membantu operasional penjualan Nahyez Baby Meal.</p>
+        <div class="brand-pills"><span>Terintegrasi</span><span>Aman</span><span>Praktis</span></div>
+        <div class="decor decor-carrot">🥕</div><div class="decor decor-pumpkin">🎃</div>
+      </div>
+
+      <div class="form-panel">
+        <div class="mobile-brand"><span class="brand-mark small">N</span><span>NAHYEZ BABY MEAL</span></div>
+        <div class="form-heading">
+          <p class="eyebrow">SELAMAT DATANG</p>
+          <h2>Masuk ke akun</h2>
+          <p>Pilih metode masuk sesuai akses Anda.</p>
+        </div>
+        <div class="role-tabs" role="tablist" aria-label="Jenis login">
+          <button class="role-tab active" id="ownerTab" type="button">Owner</button>
+          <button class="role-tab" id="staffTab" type="button">Karyawan</button>
+        </div>
+
+        <form id="ownerForm" class="login-form">
+          <label for="username">Username</label>
+          <input id="username" name="username" autocomplete="username" value="owner" required>
+          <label for="password">Password</label>
+          <div class="password-wrap"><input id="password" name="password" type="password" autocomplete="current-password" required><button id="togglePassword" type="button" aria-label="Tampilkan password">Lihat</button></div>
+          <button class="primary-btn" type="submit"><span>Masuk sebagai Owner</span><b>→</b></button>
+        </form>
+
+        <form id="staffForm" class="login-form hidden">
+          <label for="qrToken">QR Token Karyawan</label>
+          <input id="qrToken" name="qrToken" type="password" autocomplete="off" placeholder="Pindai QR atau masukkan token" required>
+          <p class="field-hint">Token hanya digunakan untuk proses login dan tidak disimpan.</p>
+          <button class="scan-btn" id="scanButton" type="button">▦ &nbsp; Pindai QR dengan Kamera</button>
+          <video id="camera" class="camera hidden" playsinline muted></video>
+          <button class="primary-btn" type="submit"><span>Masuk sebagai Karyawan</span><b>→</b></button>
+        </form>
+        <div id="notice" class="notice" role="status" aria-live="polite"></div>
+        <p class="security-note"><span>●</span> Sesi login terlindungi dan berlaku selama 1 jam.</p>
+      </div>
+    </section>
+
+    <section id="dashboardView" class="dashboard hidden">
+      <header class="dash-header">
+        <div class="dash-brand"><span class="brand-mark small">N</span><div><strong>NAHYEZ BABY MEAL</strong><small>PORTAL PENJUALAN</small></div></div>
+        <button id="logoutButton" class="logout-btn" type="button">Keluar ↗</button>
+      </header>
+      <div class="welcome-card">
+        <div><p class="eyebrow">DASHBOARD</p><h2 id="welcomeName">Selamat datang</h2><p id="welcomeRole">Akun berhasil terhubung.</p></div>
+        <div class="welcome-icon">✦</div>
+      </div>
+      <div class="info-grid">
+        <article class="info-card"><span class="card-label">JENIS AKSES</span><strong id="profileRole">—</strong></article>
+        <article class="info-card"><span class="card-label">ID PENGGUNA</span><strong id="profileId">—</strong></article>
+        <article class="info-card"><span class="card-label">OUTLET</span><strong id="profileOutlet">Semua Outlet</strong></article>
+      </div>
+      <div class="coming-card"><span class="coming-icon">✧</span><div><strong>Ruang kerja penjualan</strong><p>Login dan koneksi API berhasil. Modul transaksi akan ditambahkan pada tahap berikutnya.</p></div><span class="status-chip">TERHUBUNG</span></div>
+      <footer>© 2026 Nahyez Baby Meal · Sistem Penjualan</footer>
+    </section>
+  </main>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/app.js"></script>
 </body>
 </html>
