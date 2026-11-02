@@ -42,8 +42,12 @@
     $("welcomeRole").textContent = user.role === "OWNER"
       ? "Anda masuk dengan akses Owner."
       : `Anda masuk sebagai Crew${user.outletNama ? " · " + user.outletNama : ""}.`;
-    $("profileRole").textContent = user.role === "OWNER" ? "Owner" : "Crew";
-    $("profileId").textContent = user.role === "OWNER" ? (user.username || "owner") : (user.idCrew || "—");
+    // Label tampilan mengikuti istilah pada master absensi.
+    // ID diambil dari nama properti profil asli, bukan label UI Crew/Karyawan.
+    $("profileRole").textContent = user.role === "OWNER" ? "Owner" : "Karyawan";
+    $("profileId").textContent = user.role === "OWNER"
+      ? (user.username || "owner")
+      : (user.idKaryawan || user.id || "—");
     $("profileOutlet").textContent = user.role === "OWNER" ? "Semua Outlet" : (user.outletNama || "—");
   }
   async function restoreSession() {

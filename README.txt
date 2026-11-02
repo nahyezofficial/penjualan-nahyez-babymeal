@@ -19,3 +19,12 @@ Pemasangan:
 
 API tetap menggunakan Cloudflare Worker yang sudah diuji CORS.
 Tidak ada perubahan Worker, Apps Script, sesi, maupun data akun.
+
+
+PATCH V2.1:
+- Label kartu JENIS AKSES untuk akun Crew ditampilkan sebagai "Karyawan"
+  agar konsisten dengan istilah pada master absensi.
+- ID PENGGUNA membaca properti profil idKaryawan (fallback: id).
+- Perubahan hanya pada label dan pembacaan tampilan frontend.
+- Tidak mengubah role internal KARYAWAN, ID karyawan, Apps Script,
+  Worker, QR Token, sesi, atau data master absensi.
