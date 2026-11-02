@@ -2,7 +2,15 @@
   const $ = id => document.getElementById(id);
   const loginView = $("loginView"), dashboardView = $("dashboardView");
   const ownerForm = $("ownerForm"), staffForm = $("staffForm");
-  let activeMode = "owner", stream = null, scanTimer = null;
+  let activeMode = "owner", stream = null, scanTimer = null, scanBusy = false;
+
+  function showLoading(message = "Memverifikasi akun...") {
+    $("loadingText").textContent = message;
+    $("loadingOverlay").classList.remove("hidden");
+  }
+  function hideLoading() {
+    $("loadingOverlay").classList.add("hidden");
+  }
 
   function showNotice(message, type = "") {
     $("notice").textContent = message;
@@ -27,14 +35,15 @@
     dashboardView.classList.add("hidden");
   }
   function showDashboard(user, expiresAt) {
+    hideLoading();
     loginView.classList.add("hidden");
     dashboardView.classList.remove("hidden");
     $("welcomeName").textContent = user.nama || user.username || "Pengguna";
     $("welcomeRole").textContent = user.role === "OWNER"
       ? "Anda masuk dengan akses Owner."
-      : `Anda masuk sebagai karyawan${user.outletNama ? " · " + user.outletNama : ""}.`;
-    $("profileRole").textContent = user.role === "OWNER" ? "Owner" : "Karyawan";
-    $("profileId").textContent = user.role === "OWNER" ? (user.username || "owner") : (user.idKaryawan || "—");
+      : `Anda masuk sebagai Crew${user.outletNama ? " · " + user.outletNama : ""}.`;
+    $("profileRole").textContent = user.role === "OWNER" ? "Owner" : "Crew";
+    $("profileId").textContent = user.role === "OWNER" ? (user.username || "owner") : (user.idCrew || "—");
     $("profileOutlet").textContent = user.role === "OWNER" ? "Semua Outlet" : (user.outletNama || "—");
   }
   async function restoreSession() {
@@ -61,7 +70,8 @@
     const username = $("username").value.trim();
     const password = $("password").value;
     setBusy(ownerForm, true, "Masuk sebagai Owner");
-    showNotice("Memeriksa akun...");
+    showNotice("");
+    showLoading("Memverifikasi akun Owner...");
     try {
       const result = await NahyezAPI.loginOwner(username, password);
       NahyezAPI.saveToken(result.token);
@@ -69,26 +79,37 @@
       showNotice("");
       showDashboard(result.user);
     } catch (error) {
+      hideLoading();
       showNotice(error.message);
     } finally { setBusy(ownerForm, false, "Masuk sebagai Owner"); }
   });
+
+  async function loginCrew(qrToken) {
+    if (!qrToken || scanBusy) return;
+    scanBusy = true;
+    setBusy(staffForm, true, "Masuk sebagai Crew");
+    showNotice("");
+    showLoading("Memvalidasi QR Crew...");
+    try {
+      const result = await NahyezAPI.loginStaff(qrToken);
+      NahyezAPI.saveToken(result.token);
+      $("qrToken").value = "";
+      await stopCamera();
+      showDashboard(result.user);
+    } catch (error) {
+      hideLoading();
+      showNotice(error.message);
+    } finally {
+      scanBusy = false;
+      setBusy(staffForm, false, "Masuk sebagai Crew");
+    }
+  }
 
   staffForm.addEventListener("submit", async event => {
     event.preventDefault();
     const qrToken = $("qrToken").value.trim();
     if (!qrToken) return showNotice("Pindai QR atau masukkan QR Token terlebih dahulu.");
-    setBusy(staffForm, true, "Masuk sebagai Karyawan");
-    showNotice("Memvalidasi QR Token...");
-    try {
-      const result = await NahyezAPI.loginStaff(qrToken);
-      NahyezAPI.saveToken(result.token);
-      $("qrToken").value = "";
-      showNotice("");
-      stopCamera();
-      showDashboard(result.user);
-    } catch (error) {
-      showNotice(error.message);
-    } finally { setBusy(staffForm, false, "Masuk sebagai Karyawan"); }
+    await loginCrew(qrToken);
   });
 
   async function stopCamera() {
@@ -111,15 +132,16 @@
       video.srcObject = stream;
       video.classList.remove("hidden");
       await video.play();
-      showNotice("Arahkan kamera ke QR Token karyawan.");
+      showNotice("Arahkan kamera ke QR Token Crew.");
       scanTimer = setInterval(async () => {
         if (!video.videoWidth || !video.videoHeight) return;
         try {
           const codes = await detector.detect(video);
-          if (codes.length && codes[0].rawValue) {
-            $("qrToken").value = codes[0].rawValue.trim();
-            showNotice("QR terbaca. Tekan tombol Masuk sebagai Karyawan.");
+          if (codes.length && codes[0].rawValue && !scanBusy) {
+            const scannedToken = codes[0].rawValue.trim();
+            $("qrToken").value = scannedToken;
             await stopCamera();
+            await loginCrew(scannedToken);
           }
         } catch {}
       }, 500);
@@ -137,6 +159,7 @@
       $("password").value = "";
       $("qrToken").value = "";
       await stopCamera();
+      hideLoading();
       selectMode("owner");
       showLogin();
     }

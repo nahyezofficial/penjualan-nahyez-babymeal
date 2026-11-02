@@ -1,25 +1,21 @@
-FRONTEND PENJUALAN NAHYEZ BABY MEAL - VERSI 1
+FRONTEND PENJUALAN NAHYEZ BABY MEAL - VERSI 2
 
-Isi:
-- Login Owner (username + password)
-- Login Karyawan (QR Token manual atau scan kamera jika browser mendukung BarcodeDetector)
-- Pemulihan sesi dan logout
-- Tampilan dashboard awal berdasarkan profil login
-- Sesi disimpan di sessionStorage dan token QR tidak disimpan
+Perubahan versi 2:
+1. Logo N diganti dengan logo resmi Nahyez Baby Meal dari pengguna.
+2. Headline banner login menjadi "Laporan Penjualan Harian".
+3. Ilustrasi bahan makanan tersebar secara acak pada panel banner login.
+4. Overlay loading dengan logo dan spinner saat proses login.
+5. Istilah Karyawan diganti menjadi Crew pada UI.
+6. QR kamera otomatis memproses login setelah QR terbaca, tanpa klik tombol login lagi.
 
-PENTING:
-1. File ini hanya frontend. Tidak ada password, QR Token, HMAC Secret,
-   OWNER_SETUP_TOKEN, atau TEST_ACCESS_TOKEN di dalam paket.
-2. API diarahkan ke Cloudflare Worker yang sudah digunakan:
-   https://nahyez-penjualan-api.nahyez-babymeal.workers.dev
-3. Sebelum login dari GitHub Pages, Worker perlu diperbarui dengan paket
-   CORS terpisah.
-4. Upload seluruh isi folder frontend ke root repository GitHub:
-   penjualan-nahyez-babymeal
-   Pastikan index.html berada langsung di root repository.
-5. Setelah commit, tunggu GitHub Pages selesai deploy lalu buka:
-   https://nahyezofficial.github.io/penjualan-nahyez-babymeal/
+Pemasangan:
+- Ekstrak ZIP.
+- Upload seluruh isi folder ke root repository GitHub Pages.
+- Timpa file index.html, README.txt, assets/css/style.css, assets/js/app.js,
+  dan tambahkan assets/images/logo-nahyez.png serta food-doodles.png.
+- Pertahankan assets/js/config.js dan assets/js/api.js yang sudah ada; keduanya
+  tetap disertakan dalam paket dan tidak mengubah endpoint API.
+- Commit changes, tunggu GitHub Pages selesai deploy, lalu refresh halaman.
 
-CATATAN:
-Dashboard pada versi ini adalah kerangka awal. Modul transaksi/penjualan
-belum dibuat karena alur dan kolom transaksi akan disusun pada tahap berikutnya.
+API tetap menggunakan Cloudflare Worker yang sudah diuji CORS.
+Tidak ada perubahan Worker, Apps Script, sesi, maupun data akun.

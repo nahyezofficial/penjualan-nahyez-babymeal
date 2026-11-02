@@ -12,16 +12,16 @@
   <main class="app-shell">
     <section id="loginView" class="login-layout">
       <div class="brand-panel">
-        <div class="brand-mark">N</div>
+        <img class="brand-logo" src="assets/images/logo-nahyez.png" alt="Logo Nahyez Baby Meal">
         <p class="eyebrow">NAHYEZ BABY MEAL</p>
-        <h1>Penjualan<br><span>lebih mudah.</span></h1>
+        <h1>Laporan<br><span>Penjualan Harian</span></h1>
         <p class="brand-copy">Satu ruang kerja untuk membantu operasional penjualan Nahyez Baby Meal.</p>
         <div class="brand-pills"><span>Terintegrasi</span><span>Aman</span><span>Praktis</span></div>
-        <div class="decor decor-carrot">🥕</div><div class="decor decor-pumpkin">🎃</div>
+        
       </div>
 
       <div class="form-panel">
-        <div class="mobile-brand"><span class="brand-mark small">N</span><span>NAHYEZ BABY MEAL</span></div>
+        <div class="mobile-brand"><img class="brand-logo small" src="assets/images/logo-nahyez.png" alt="Logo Nahyez Baby Meal"><span>NAHYEZ BABY MEAL</span></div>
         <div class="form-heading">
           <p class="eyebrow">SELAMAT DATANG</p>
           <h2>Masuk ke akun</h2>
@@ -29,7 +29,7 @@
         </div>
         <div class="role-tabs" role="tablist" aria-label="Jenis login">
           <button class="role-tab active" id="ownerTab" type="button">Owner</button>
-          <button class="role-tab" id="staffTab" type="button">Karyawan</button>
+          <button class="role-tab" id="staffTab" type="button">Crew</button>
         </div>
 
         <form id="ownerForm" class="login-form">
@@ -41,12 +41,12 @@
         </form>
 
         <form id="staffForm" class="login-form hidden">
-          <label for="qrToken">QR Token Karyawan</label>
+          <label for="qrToken">QR Token Crew</label>
           <input id="qrToken" name="qrToken" type="password" autocomplete="off" placeholder="Pindai QR atau masukkan token" required>
           <p class="field-hint">Token hanya digunakan untuk proses login dan tidak disimpan.</p>
           <button class="scan-btn" id="scanButton" type="button">▦ &nbsp; Pindai QR dengan Kamera</button>
           <video id="camera" class="camera hidden" playsinline muted></video>
-          <button class="primary-btn" type="submit"><span>Masuk sebagai Karyawan</span><b>→</b></button>
+          <button class="primary-btn" type="submit"><span>Masuk sebagai Crew</span><b>→</b></button>
         </form>
         <div id="notice" class="notice" role="status" aria-live="polite"></div>
         <p class="security-note"><span>●</span> Sesi login terlindungi dan berlaku selama 1 jam.</p>
@@ -55,7 +55,7 @@
 
     <section id="dashboardView" class="dashboard hidden">
       <header class="dash-header">
-        <div class="dash-brand"><span class="brand-mark small">N</span><div><strong>NAHYEZ BABY MEAL</strong><small>PORTAL PENJUALAN</small></div></div>
+        <div class="dash-brand"><img class="brand-logo small" src="assets/images/logo-nahyez.png" alt="Logo Nahyez Baby Meal"><div><strong>NAHYEZ BABY MEAL</strong><small>PORTAL PENJUALAN</small></div></div>
         <button id="logoutButton" class="logout-btn" type="button">Keluar ↗</button>
       </header>
       <div class="welcome-card">
@@ -71,6 +71,14 @@
       <footer>© 2026 Nahyez Baby Meal · Sistem Penjualan</footer>
     </section>
   </main>
+
+  <div id="loadingOverlay" class="loading-overlay hidden" aria-live="polite" aria-label="Memproses login">
+    <div class="loading-content">
+      <img src="assets/images/logo-nahyez.png" alt="" class="loading-logo">
+      <div class="loading-ring"></div>
+      <p id="loadingText">Memverifikasi akun...</p>
+    </div>
+  </div>
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/app.js"></script>
