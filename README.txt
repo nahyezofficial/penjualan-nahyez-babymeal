@@ -28,3 +28,25 @@ PATCH V2.1:
 - Perubahan hanya pada label dan pembacaan tampilan frontend.
 - Tidak mengubah role internal KARYAWAN, ID karyawan, Apps Script,
   Worker, QR Token, sesi, atau data master absensi.
+
+
+PATCH V2.2 — MODUL OWNER BUAT DRAFT LAPORAN
+1. Menambahkan panel "Buat Laporan Harian" khusus role OWNER.
+2. Daftar outlet aktif dimuat dari endpoint GET /api/outlet/aktif
+   (sumber data Master Absensi).
+3. Owner memilih outlet, lalu frontend memeriksa laporan hari ini melalui
+   GET /api/laporan/harian/hari-ini?outletId=...
+4. Owner dapat membuat Draft melalui POST /api/laporan/harian dengan outletId.
+5. Jika laporan sudah ada, tombol pembuatan dinonaktifkan; backend tetap menjadi
+   pengaman utama anti-duplikasi outlet + tanggal.
+6. Crew tetap tidak mendapatkan panel Owner; tampilan Crew menampilkan kartu
+   informasi modul yang akan dilanjutkan.
+
+Catatan:
+- Fitur ini membuat Draft Laporan Harian saja. Form input rincian penjualan,
+  produk, pembayaran, biaya, stok, dan finalisasi belum ditambahkan karena
+  endpoint backend untuk menyimpan rincian tersebut belum menjadi bagian
+  dari versi backend yang sedang digunakan.
+- Tanggal laporan selalu ditentukan backend dalam zona Asia/Jakarta (WIB).
+- Tidak mengubah login, QR, sesi, CORS, konfigurasi API, atau aset logo.
+- Sebelum deploy, backup file frontend lama.

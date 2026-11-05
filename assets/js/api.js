@@ -39,6 +39,11 @@
       method: "POST", auth: false, body: { qrToken }
     }),
     getSession: () => request("/session"),
+    getActiveOutlets: () => request("/api/outlet/aktif"),
+    getTodayReport: outletId => request(`/api/laporan/harian/hari-ini?outletId=${encodeURIComponent(outletId)}`),
+    createDailyReport: outletId => request("/api/laporan/harian", {
+      method: "POST", body: { outletId }
+    }),
     logout: () => request("/logout", { method: "POST" }),
     saveToken: token => sessionStorage.setItem(TOKEN_KEY, token),
     clearToken: () => sessionStorage.removeItem(TOKEN_KEY),

@@ -67,7 +67,23 @@
         <article class="info-card"><span class="card-label">ID PENGGUNA</span><strong id="profileId">—</strong></article>
         <article class="info-card"><span class="card-label">OUTLET</span><strong id="profileOutlet">Semua Outlet</strong></article>
       </div>
-      <div class="coming-card"><span class="coming-icon">✧</span><div><strong>Ruang kerja penjualan</strong><p>Login dan koneksi API berhasil. Modul transaksi akan ditambahkan pada tahap berikutnya.</p></div><span class="status-chip">TERHUBUNG</span></div>
+      <section id="ownerReportPanel" class="report-panel hidden" aria-labelledby="ownerReportTitle">
+        <div class="section-heading">
+          <div><p class="section-kicker">AKSES OWNER</p><h3 id="ownerReportTitle">Buat Laporan Harian</h3>
+            <p>Pilih outlet aktif yang belum memiliki laporan untuk hari ini.</p></div>
+          <span class="section-icon">＋</span>
+        </div>
+        <label class="field-label" for="ownerOutletSelect">Pilih Outlet</label>
+        <select id="ownerOutletSelect" class="report-select">
+          <option value="">Memuat daftar outlet...</option>
+        </select>
+        <div id="ownerReportStatus" class="report-status" aria-live="polite">Pilih outlet untuk memeriksa laporan hari ini.</div>
+        <button id="createOwnerReportButton" class="report-action" type="button" disabled>
+          <span>Buat Draft Laporan</span><b>→</b>
+        </button>
+        <p class="report-footnote">Tanggal ditentukan otomatis oleh server (WIB). Satu laporan untuk setiap outlet per tanggal.</p>
+      </section>
+      <div id="crewComingCard" class="coming-card"><span class="coming-icon">✧</span><div><strong>Ruang kerja penjualan</strong><p>Login dan koneksi API berhasil. Modul laporan Crew akan ditambahkan pada tahap berikutnya.</p></div><span class="status-chip">TERHUBUNG</span></div>
       <footer>© 2026 Nahyez Baby Meal · Sistem Penjualan</footer>
     </section>
   </main>
