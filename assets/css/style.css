@@ -20,3 +20,75 @@
 .loading-content p{position:absolute;top:calc(100% + 18px);width:260px;text-align:center;color:#fff;font-size:12px;font-weight:600;text-shadow:0 1px 4px #33251d}
 @keyframes nahyezSpin{to{transform:rotate(360deg)}}
 @media(max-width:760px){.brand-logo.small{width:46px;height:40px}.brand-panel:after{background-size:cover;opacity:.17}}
+
+
+/* =========================================================
+   TEMA PINK — NAHYEZ BABY MEAL
+   Lapisan override warna; layout dan fungsi asli dipertahankan.
+   ========================================================= */
+:root{
+  --orange:#e978a5;
+  --orange-dark:#c94f82;
+  --peach:#f6dce7;
+  --cream:#fff6fa;
+  --ink:#3d2d35;
+  --muted:#8d7b84;
+  --line:#f0dfe7;
+  --white:#fff;
+  --green:#378c66;
+}
+body{
+  background:linear-gradient(135deg,#fff6fa 0%,#fff 52%,#fbeaf1 100%);
+}
+.ambient-one{background:#f5cbdc;opacity:.48}
+.ambient-two{background:#f8e0ea;opacity:.68}
+.login-layout{
+  border-color:rgba(239,211,224,.9);
+  box-shadow:0 24px 70px rgba(112,55,79,.10);
+}
+.brand-panel{
+  background:linear-gradient(145deg,#f4a9c4 0%,#e978a5 72%,#d95f91 100%);
+}
+.brand-mark{color:#c94f82}
+.brand-panel h1 span{color:#fff0f6}
+.brand-copy{color:#fff5f9}
+.brand-pills span{border-color:#ffffff80;background:#ffffff18}
+.form-heading .eyebrow{color:#c94f82}
+.role-tabs{background:#fbf0f5}
+.role-tab.active{
+  color:#c94f82;
+  box-shadow:0 2px 8px rgba(112,55,79,.08);
+}
+.login-form input:focus{
+  border-color:#e99ab8;
+  box-shadow:0 0 0 3px #f8e3ec;
+}
+.password-wrap button{color:#c94f82}
+.primary-btn{
+  background:linear-gradient(100deg,#ee9fba,#d95f91);
+  box-shadow:0 8px 18px rgba(217,95,145,.25);
+}
+.scan-btn{
+  border-color:#e8b3c8;
+  background:#fff7fa;
+  color:#b84e7c;
+}
+.welcome-card{
+  background:linear-gradient(110deg,#f2a6c1,#df6f9c);
+  box-shadow:0 14px 32px rgba(217,95,145,.22);
+}
+.welcome-card p:last-child{color:#fff3f8}
+.coming-icon{
+  background:#fff0f6;
+  color:#c94f82;
+}
+.logout-btn{color:#806271}
+.loading-overlay{background:rgba(58,35,47,.48)}
+.loading-ring{
+  border-color:rgba(233,120,165,.18);
+  border-top-color:#e978a5;
+  border-right-color:#f3a9c3;
+}
+@media(max-width:760px){
+  body{background:linear-gradient(145deg,#fff7fa 0%,#fff 60%,#fbeaf1 100%)}
+}
