@@ -35,9 +35,12 @@
     dashboardView.classList.add("hidden");
   }
   function showDashboard(user, expiresAt) {
+    window.currentNahyezUser = user;
     hideLoading();
     loginView.classList.add("hidden");
     dashboardView.classList.remove("hidden");
+    $("appLayout").classList.remove("hidden");
+    activatePage("pageDashboard");
     $("welcomeName").textContent = user.nama || user.username || "Pengguna";
     $("welcomeRole").textContent = user.role === "OWNER"
       ? "Anda masuk dengan akses Owner."
@@ -51,6 +54,8 @@
     $("profileOutlet").textContent = user.role === "OWNER" ? "Semua Outlet" : (user.outletNama || "—");
     $("ownerReportPanel").classList.toggle("hidden", user.role !== "OWNER");
     $("crewComingCard").classList.toggle("hidden", user.role === "OWNER");
+    document.querySelectorAll(".nav-item[data-page=\"pageSettings\"]").forEach(el => el.classList.toggle("hidden", user.role !== "OWNER"));
+    $("pageSettings").classList.toggle("hidden", user.role !== "OWNER");
     if (user.role === "OWNER") loadOwnerOutlets();
     else initializeCrewWorkspace();
   }
@@ -316,6 +321,103 @@
   }
 
   $("saveProductDetailsButton").addEventListener("click", saveProductDetails);
+
+  // V2.6 — pengaturan tarif operasional hanya untuk Owner.
+  let outletFuelCache = [];
+  let routeFuelCache = [];
+  let settingsOutletNames = {};
+  const rupiahInput = value => value === null || value === undefined || value === "" ? "" : String(value);
+  function setSettingsStatus(id, message, type = "") {
+    const el = $(id); if (!el) return;
+    el.textContent = message; el.className = `report-status ${type}`.trim();
+  }
+  function renderOutletFuelSettings() {
+    const host = $("outletFuelList"); host.replaceChildren();
+    if (!outletFuelCache.length) { host.innerHTML = '<div class="report-status warning">Tidak ada konfigurasi tarif outlet aktif yang diterima.</div>'; return; }
+    outletFuelCache.forEach(item => {
+      const row = document.createElement("div"); row.className = "settings-row";
+      const info = document.createElement("div");
+      const title = document.createElement("strong"); title.textContent = settingsOutletNames[item.outletId] || item.outletId;
+      const meta = document.createElement("small"); meta.textContent = `${item.outletId} · ${item.terkonfigurasi ? `Terakhir diubah: ${item.waktuPerubahan || "—"}` : "Belum dikonfigurasi"}`;
+      info.append(title, meta);
+      const label = document.createElement("label"); label.textContent = "Tarif bensin (Rp)";
+      const input = document.createElement("input"); input.type = "number"; input.min = "0"; input.step = "1"; input.inputMode = "numeric"; input.dataset.outletId = item.outletId; input.value = rupiahInput(item.nominalBensin); input.placeholder = "Masukkan nominal";
+      label.appendChild(input); row.append(info, label); host.appendChild(row);
+    });
+  }
+  function renderRouteFuelSettings() {
+    const host = $("routeFuelList"); host.replaceChildren();
+    if (!routeFuelCache.length) { host.innerHTML = '<div class="report-status warning">Tidak ada rute transfer aktif yang diterima.</div>'; return; }
+    routeFuelCache.forEach(item => {
+      const row = document.createElement("div"); row.className = "settings-row";
+      const info = document.createElement("div");
+      const title = document.createElement("strong"); title.textContent = `${settingsOutletNames[item.outletAsal] || item.outletAsal} → ${settingsOutletNames[item.outletTujuan] || item.outletTujuan}`;
+      const meta = document.createElement("small"); meta.textContent = `${item.pengaturanRuteId} · ${item.terkonfigurasi ? `Terakhir diubah: ${item.waktuPerubahan || "—"}` : "Belum dikonfigurasi"}`;
+      info.append(title, meta);
+      const label = document.createElement("label"); label.textContent = "Tarif bensin rute (Rp)";
+      const input = document.createElement("input"); input.type = "number"; input.min = "0"; input.step = "1"; input.inputMode = "numeric"; input.dataset.routeId = item.pengaturanRuteId; input.value = rupiahInput(item.nominalBensin); input.placeholder = "Masukkan nominal";
+      label.appendChild(input); row.append(info, label); host.appendChild(row);
+    });
+  }
+  async function loadOperationalSettings() {
+    if (!window.currentNahyezUser || window.currentNahyezUser.role !== "OWNER") return;
+    setSettingsStatus("outletFuelStatus", "Memuat konfigurasi tarif bensin outlet...");
+    setSettingsStatus("routeFuelStatus", "Memuat konfigurasi tarif transfer...");
+    try {
+      const [outlets, fuel, routes] = await Promise.all([NahyezAPI.getActiveOutlets(), NahyezAPI.getOutletFuelSettings(), NahyezAPI.getRouteFuelSettings()]);
+      settingsOutletNames = {};
+      (outlets.outlet || []).forEach(o => { settingsOutletNames[o.outletId] = o.namaOutlet; });
+      outletFuelCache = fuel.daftarTarif || []; routeFuelCache = routes.daftarTarif || [];
+      renderOutletFuelSettings(); renderRouteFuelSettings();
+      setSettingsStatus("outletFuelStatus", `${outletFuelCache.filter(x => x.terkonfigurasi).length} dari ${outletFuelCache.length} outlet sudah memiliki tarif.`, fuel.semuaTarifTerisi ? "success" : "warning");
+      setSettingsStatus("routeFuelStatus", `${routeFuelCache.filter(x => x.terkonfigurasi).length} dari ${routeFuelCache.length} rute sudah memiliki tarif.`, routes.semuaTarifTerisi ? "success" : "warning");
+    } catch (error) {
+      setSettingsStatus("outletFuelStatus", error.message || "Gagal memuat tarif outlet.", "error");
+      setSettingsStatus("routeFuelStatus", error.message || "Gagal memuat tarif rute.", "error");
+    }
+  }
+  async function saveOutletFuelSettings() {
+    const inputs = [...document.querySelectorAll("#outletFuelList input[data-outlet-id]")];
+    if (!inputs.length) return;
+    const daftarTarif = [];
+    for (const input of inputs) {
+      if (input.value.trim() === "" || !Number.isSafeInteger(Number(input.value)) || Number(input.value) < 0) { input.focus(); setSettingsStatus("outletFuelStatus", "Isi seluruh tarif dengan angka Rupiah bulat, minimal 0.", "error"); return; }
+      daftarTarif.push({ outletId: input.dataset.outletId, nominalBensin: Number(input.value) });
+    }
+    const button = $("saveOutletFuelButton"); button.disabled = true; button.querySelector("span").textContent = "Menyimpan...";
+    try { await NahyezAPI.saveOutletFuelSettings(daftarTarif); setSettingsStatus("outletFuelStatus", "Tarif bensin outlet berhasil diperbarui.", "success"); await loadOperationalSettings(); }
+    catch (error) { setSettingsStatus("outletFuelStatus", error.message || "Gagal menyimpan tarif outlet.", "error"); }
+    finally { button.disabled = false; button.querySelector("span").textContent = "Simpan Tarif Bensin Outlet"; }
+  }
+  async function saveRouteFuelSettings() {
+    const inputs = [...document.querySelectorAll("#routeFuelList input[data-route-id]")];
+    if (!inputs.length) return;
+    const daftarTarif = [];
+    for (const input of inputs) {
+      if (input.value.trim() === "" || !Number.isSafeInteger(Number(input.value)) || Number(input.value) < 0) { input.focus(); setSettingsStatus("routeFuelStatus", "Isi seluruh tarif dengan angka Rupiah bulat, minimal 0.", "error"); return; }
+      daftarTarif.push({ pengaturanRuteId: input.dataset.routeId, nominalBensin: Number(input.value) });
+    }
+    const button = $("saveRouteFuelButton"); button.disabled = true; button.querySelector("span").textContent = "Menyimpan...";
+    try { await NahyezAPI.saveRouteFuelSettings(daftarTarif); setSettingsStatus("routeFuelStatus", "Tarif transfer berhasil diperbarui.", "success"); await loadOperationalSettings(); }
+    catch (error) { setSettingsStatus("routeFuelStatus", error.message || "Gagal menyimpan tarif transfer.", "error"); }
+    finally { button.disabled = false; button.querySelector("span").textContent = "Simpan Tarif Transfer"; }
+  }
+  $("reloadFuelSettings").addEventListener("click", loadOperationalSettings);
+  $("reloadRouteSettings").addEventListener("click", loadOperationalSettings);
+  $("saveOutletFuelButton").addEventListener("click", saveOutletFuelSettings);
+  $("saveRouteFuelButton").addEventListener("click", saveRouteFuelSettings);
+
+  // Sidebar navigation V2.5. Dashboard content is retained; unfinished modules are clearly marked.
+  function activatePage(pageId) {
+    document.querySelectorAll(".app-page").forEach(page => page.classList.toggle("active", page.id === pageId));
+    document.querySelectorAll(".nav-item").forEach(button => button.classList.toggle("active", button.dataset.page === pageId));
+    const active = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+    if (pageId === "pageSettings") loadOperationalSettings();
+    $("activePageTitle").textContent = active ? active.textContent.trim() : "Dashboard";
+    $("appSidebar").classList.remove("open");
+  }
+  document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => activatePage(button.dataset.page)));
+  $("sidebarToggle").addEventListener("click", () => $("appSidebar").classList.toggle("open"));
 
   async function restoreSession() {
     if (!NahyezAPI.hasToken()) return showLogin();

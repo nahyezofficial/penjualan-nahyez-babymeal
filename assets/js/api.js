@@ -40,6 +40,10 @@
     }),
     getSession: () => request("/session"),
     getActiveOutlets: () => request("/api/outlet/aktif"),
+    getOutletFuelSettings: () => request("/api/pengaturan/bensin-outlet"),
+    saveOutletFuelSettings: daftarTarif => request("/api/pengaturan/bensin-outlet", { method: "POST", body: { daftarTarif } }),
+    getRouteFuelSettings: () => request("/api/pengaturan/rute"),
+    saveRouteFuelSettings: daftarTarif => request("/api/pengaturan/rute", { method: "POST", body: { daftarTarif } }),
     getProductPrices: outletId => request(`/api/produk-harga${outletId ? `?outletId=${encodeURIComponent(outletId)}` : ""}`),
     getReportDetails: laporanId => request(`/api/laporan/harian/detail?laporanId=${encodeURIComponent(laporanId)}`),
     saveReportDetails: (laporanId, daftarProduk) => request("/api/laporan/harian/detail", {

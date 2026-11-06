@@ -58,6 +58,19 @@
         <div class="dash-brand"><img class="brand-logo small" src="assets/images/logo-nahyez.png" alt="Logo Nahyez Baby Meal"><div><strong>NAHYEZ BABY MEAL</strong><small>PORTAL PENJUALAN</small></div></div>
         <button id="logoutButton" class="logout-btn" type="button">Keluar ↗</button>
       </header>
+      <div class="app-layout hidden" id="appLayout">
+        <aside class="app-sidebar" id="appSidebar">
+          <div class="sidebar-caption">MENU UTAMA</div>
+          <button class="nav-item active" data-page="pageDashboard"><span>⌂</span>Dashboard</button>
+          <button class="nav-item" data-page="pageStock"><span>▦</span>Input Stok Awal &amp; Modal Kembalian</button>
+          <button class="nav-item" data-page="pageInput"><span>＋</span>Input Laporan</button>
+          <button class="nav-item" data-page="pageResume"><span>▤</span>Resume Laporan</button>
+          <button class="nav-item" data-page="pageSettings"><span>⚙</span>Pengaturan</button>
+          <div class="sidebar-note">NAHYEZ BABY MEAL<br><small>PORTAL PENJUALAN</small></div>
+        </aside>
+        <div class="app-content">
+          <div class="mobile-nav-head"><button id="sidebarToggle" type="button" aria-label="Buka menu">☰</button><strong id="activePageTitle">Dashboard</strong></div>
+          <section class="app-page active" id="pageDashboard">
       <div class="welcome-card">
         <div><p class="eyebrow">DASHBOARD</p><h2 id="welcomeName">Selamat datang</h2><p id="welcomeRole">Akun berhasil terhubung.</p></div>
         <div class="welcome-icon">✦</div>
@@ -67,6 +80,11 @@
         <article class="info-card"><span class="card-label">ID PENGGUNA</span><strong id="profileId">—</strong></article>
         <article class="info-card"><span class="card-label">OUTLET</span><strong id="profileOutlet">Semua Outlet</strong></article>
       </div>
+          </section>
+          <section class="app-page" id="pageStock">
+            <section class="report-panel"><div class="section-heading"><div><p class="section-kicker">PERSEDIAAN HARIAN</p><h3>Input Stok Awal &amp; Modal Kembalian</h3><p>Stok awal dan modal kembalian dicatat sebelum transaksi harian dimulai.</p></div><span class="section-icon">▦</span></div><div class="report-status warning">Modul ini sedang disiapkan. Form akan diaktifkan setelah endpoint penyimpanan stok awal dan modal terintegrasi agar tidak terjadi pencatatan parsial.</div></section>
+          </section>
+          <section class="app-page" id="pageInput">
       <section id="ownerReportPanel" class="report-panel hidden" aria-labelledby="ownerReportTitle">
         <div class="section-heading">
           <div><p class="section-kicker">AKSES OWNER</p><h3 id="ownerReportTitle">Buat Laporan Harian</h3>
@@ -98,6 +116,30 @@
         </button>
         <p class="report-footnote">Harga dan omzet dihitung ulang oleh server. Penyimpanan ini hanya mencakup rincian produk; pembayaran, biaya, stok, dan finalisasi akan ditambahkan pada tahap berikutnya.</p>
       </section>
+      <section class="report-panel pending-module"><div class="section-heading"><div><p class="section-kicker">KOMPONEN LAPORAN TERPADU</p><h3>Pembayaran, Piutang &amp; Pengambilan Stok</h3><p>Komponen berikut akan digabung ke dalam satu pengiriman Submit Draft bersama rincian produk.</p></div><span class="section-icon">＋</span></div>
+        <div class="pending-grid"><label>QRIS (Rp)<input type="number" min="0" placeholder="0" disabled></label><label>Transfer (Rp)<input type="number" min="0" placeholder="0" disabled></label><label>Piutang baru (Rp)<input type="number" min="0" placeholder="0" disabled></label><label>Pembayaran piutang lama (Rp)<input type="number" min="0" placeholder="0" disabled></label></div>
+        <div class="report-status warning">Belum aktif: menunggu API transaksi terpadu agar semua komponen tersimpan bersama secara konsisten.</div>
+      </section>
+          </section>
+          <section class="app-page" id="pageResume"><section class="report-panel"><div class="section-heading"><div><p class="section-kicker">ARSIP &amp; PEMANTAUAN</p><h3>Resume Laporan</h3><p>Daftar Draft, laporan Final, dan riwayat outlet akan ditampilkan di sini.</p></div><span class="section-icon">▤</span></div><div class="report-status warning">Modul resume sedang disiapkan. Data laporan lama tetap aman dan tidak diubah.</div></section></section>
+          <section class="app-page" id="pageSettings">
+            <section class="report-panel">
+              <div class="section-heading"><div><p class="section-kicker">KONFIGURASI OWNER</p><h3>Tarif Operasional</h3><p>Kelola tarif bensin outlet dan enam rute transfer. Perubahan berlaku untuk transaksi berikutnya.</p></div><span class="section-icon">⚙</span></div>
+              <div class="settings-subhead"><div><h4>Tarif Bensin Outlet</h4><p>Nominal dalam Rupiah per hari untuk masing-masing outlet.</p></div><button type="button" class="secondary-action" id="reloadFuelSettings">Muat Ulang</button></div>
+              <div id="outletFuelList" class="settings-list"><div class="report-status">Memuat tarif bensin outlet...</div></div>
+              <div id="outletFuelStatus" class="report-status" aria-live="polite">Tarif yang belum diisi akan ditandai belum dikonfigurasi.</div>
+              <button id="saveOutletFuelButton" class="report-action" type="button"><span>Simpan Tarif Bensin Outlet</span><b>→</b></button>
+            </section>
+            <section class="report-panel">
+              <div class="settings-subhead"><div><h4>Tarif Bensin Transfer Stok</h4><p>Tarif untuk enam rute transfer yang sudah terdaftar pada database.</p></div><button type="button" class="secondary-action" id="reloadRouteSettings">Muat Ulang</button></div>
+              <div id="routeFuelList" class="settings-list"><div class="report-status">Memuat tarif rute...</div></div>
+              <div id="routeFuelStatus" class="report-status" aria-live="polite">Tarif lama yang telah menjadi snapshot laporan tidak akan berubah.</div>
+              <button id="saveRouteFuelButton" class="report-action" type="button"><span>Simpan Tarif Transfer</span><b>→</b></button>
+              <p class="report-footnote">Hanya Owner yang dapat melihat dan memperbarui tarif. Pastikan nominal sudah benar sebelum disimpan.</p>
+            </section>
+          </section>
+        </div>
+      </div>
       <div id="crewComingCard" class="coming-card"><span class="coming-icon">✧</span><div><strong>Ruang kerja penjualan</strong><p>Login dan koneksi API berhasil. Modul laporan Crew akan ditambahkan pada tahap berikutnya.</p></div><span class="status-chip">TERHUBUNG</span></div>
       <footer>© 2026 Nahyez Baby Meal · Sistem Penjualan</footer>
     </section>
