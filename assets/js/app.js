@@ -225,24 +225,25 @@
       const outletId = report.OutletID || "";
       const result = await NahyezAPI.getProductPrices(outletId);
       activeProducts = Array.isArray(result.harga) ? result.harga : [];
-      renderProductEntries();
+      const saved = await NahyezAPI.getReportDetails(report.LaporanID);
+      const savedMap = new Map((Array.isArray(saved.detail) ? saved.detail : []).map(item => [item.produkId, item]));
+      renderProductEntries(savedMap);
       setWorkspaceStatus(
         activeProducts.length
-          ? `${activeProducts.length} produk aktif tersedia. Isi jumlah yang terjual atau gratis, lalu simpan.`
+          ? (saved.jumlahBaris
+              ? `Rincian tersimpan berhasil dimuat (${saved.jumlahBaris} jenis produk). Anda dapat memeriksa atau memperbarui jumlahnya.`
+              : `${activeProducts.length} produk aktif tersedia. Belum ada rincian tersimpan; silakan isi jumlah produk.`)
           : "Tidak ada produk dengan harga aktif untuk outlet ini.",
         activeProducts.length ? "success" : "warning"
       );
-      $("saveProductDetailsButton").disabled = !activeProducts.length || !draftBaru;
-      if (!draftBaru && activeProducts.length) {
-        setWorkspaceStatus("Draft ini sudah ada sebelum halaman dibuka. Karena endpoint pembacaan rincian tersimpan belum tersedia, penyimpanan ulang dinonaktifkan agar data lama tidak tertimpa. Draft baru dapat diisi setelah fitur baca-detail ditambahkan.", "warning");
-      }
+      $("saveProductDetailsButton").disabled = !activeProducts.length;
     } catch (error) {
       $("productEntryList").innerHTML = "";
       setWorkspaceStatus(error.message || "Gagal memuat produk dan harga.", "error");
     }
   }
 
-  function renderProductEntries() {
+  function renderProductEntries(savedMap = new Map()) {
     const list = $("productEntryList");
     list.innerHTML = "";
     activeProducts.forEach(product => {
@@ -258,6 +259,11 @@
         <div><label>Gratis</label><input class="free-input" type="number" min="0" step="1" inputmode="numeric" value="0" aria-label="Jumlah gratis" ${canFree ? "" : "disabled"}></div>`;
       row.querySelector("strong").textContent = product.namaProduk;
       row.querySelector("small").textContent = `${formatRupiah(product.hargaJual)} / satuan · Konversi stok ${product.konversiStok}`;
+      const saved = savedMap.get(product.produkId);
+      if (saved) {
+        row.querySelector(".sold-input").value = Number(saved.jumlahTerjual) || 0;
+        row.querySelector(".free-input").value = Number(saved.jumlahGratis) || 0;
+      }
       row.querySelectorAll("input").forEach(input => input.addEventListener("input", updateProductTotal));
       list.appendChild(row);
     });

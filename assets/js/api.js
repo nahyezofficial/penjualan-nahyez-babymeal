@@ -41,6 +41,7 @@
     getSession: () => request("/session"),
     getActiveOutlets: () => request("/api/outlet/aktif"),
     getProductPrices: outletId => request(`/api/produk-harga${outletId ? `?outletId=${encodeURIComponent(outletId)}` : ""}`),
+    getReportDetails: laporanId => request(`/api/laporan/harian/detail?laporanId=${encodeURIComponent(laporanId)}`),
     saveReportDetails: (laporanId, daftarProduk) => request("/api/laporan/harian/detail", {
       method: "POST", body: { laporanId, daftarProduk }
     }),
