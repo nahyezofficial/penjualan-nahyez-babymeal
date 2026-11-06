@@ -50,3 +50,21 @@ Catatan:
 - Tanggal laporan selalu ditentukan backend dalam zona Asia/Jakarta (WIB).
 - Tidak mengubah login, QR, sesi, CORS, konfigurasi API, atau aset logo.
 - Sebelum deploy, backup file frontend lama.
+
+
+PATCH V2.3 — WORKSPACE RINCIAN PRODUK (INTEGRASI FRONTEND TAHAP 2)
+1. Menambahkan workspace input jumlah produk terjual dan gratis pada laporan Draft.
+2. Owner membuka workspace setelah memilih outlet dan membuat Draft.
+3. Crew memeriksa laporan hari ini; bila belum ada, frontend meminta backend membuat Draft untuk outlet Crew.
+4. Daftar produk dan harga diambil dari GET /api/produk-harga. Untuk Owner, outletId dikirim sebagai query; untuk Crew, outlet berasal dari sesi Worker.
+5. Penyimpanan menggunakan POST /api/laporan/harian/detail dengan hanya produkId, jumlahTerjual, jumlahGratis.
+6. Estimasi omzet pada layar hanya pratinjau; backend menghitung ulang harga dan omzet.
+7. Input gratis hanya diaktifkan di UI untuk nama produk Bubur Bayi Full Cup dan Puding 1 Cup; backend tetap memvalidasi.
+8. Jika membuka Draft yang sudah ada dari sesi/halaman sebelumnya, tombol simpan dinonaktifkan. Ini langkah pengaman karena endpoint baca-detail tersimpan belum tersedia; mencegah rincian lama tertimpa oleh form kosong.
+9. Pembayaran, utang, Daily Fee, biaya, stok awal, setoran tunai, dan finalisasi belum ada di frontend.
+
+PENTING:
+- Paket frontend ini membutuhkan Cloudflare Worker dan Apps Script backend Tahap 2 yang sudah disediakan sebelumnya.
+- Jangan deploy sebelum backend Tahap 2 dipasang dan diuji di staging.
+- Untuk membuka kembali dan mengedit rincian Draft yang sudah tersimpan, perlu endpoint baca-detail pada backend (belum termasuk patch ini).
+- Backup repository aktif sebelum upload.

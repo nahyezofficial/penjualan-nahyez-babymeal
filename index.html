@@ -83,6 +83,21 @@
         </button>
         <p class="report-footnote">Tanggal ditentukan otomatis oleh server (WIB). Satu laporan untuk setiap outlet per tanggal.</p>
       </section>
+      <section id="reportWorkspace" class="report-panel hidden" aria-labelledby="workspaceTitle">
+        <div class="section-heading">
+          <div><p class="section-kicker">INPUT PENJUALAN</p><h3 id="workspaceTitle">Rincian Produk Terjual</h3>
+            <p id="workspaceSubtitle">Masukkan jumlah produk terjual dan gratis untuk laporan Draft.</p></div>
+          <span class="section-icon">▤</span>
+        </div>
+        <div id="workspaceMeta" class="report-status"></div>
+        <div id="productEntryList" class="product-entry-list"></div>
+        <div class="report-total"><span>Perkiraan omzet produk</span><strong id="productTotal">Rp0</strong></div>
+        <div id="workspaceStatus" class="report-status" aria-live="polite">Memuat rincian produk...</div>
+        <button id="saveProductDetailsButton" class="report-action" type="button" disabled>
+          <span>Simpan Rincian Produk</span><b>→</b>
+        </button>
+        <p class="report-footnote">Harga dan omzet dihitung ulang oleh server. Penyimpanan ini hanya mencakup rincian produk; pembayaran, biaya, stok, dan finalisasi akan ditambahkan pada tahap berikutnya.</p>
+      </section>
       <div id="crewComingCard" class="coming-card"><span class="coming-icon">✧</span><div><strong>Ruang kerja penjualan</strong><p>Login dan koneksi API berhasil. Modul laporan Crew akan ditambahkan pada tahap berikutnya.</p></div><span class="status-chip">TERHUBUNG</span></div>
       <footer>© 2026 Nahyez Baby Meal · Sistem Penjualan</footer>
     </section>
