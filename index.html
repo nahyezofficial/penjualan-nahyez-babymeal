@@ -82,7 +82,17 @@
       </div>
           </section>
           <section class="app-page" id="pageStock">
-            <section class="report-panel"><div class="section-heading"><div><p class="section-kicker">PERSEDIAAN HARIAN</p><h3>Input Stok Awal &amp; Modal Kembalian</h3><p>Stok awal dan modal kembalian dicatat sebelum transaksi harian dimulai.</p></div><span class="section-icon">▦</span></div><div class="report-status warning">Modul ini sedang disiapkan. Form akan diaktifkan setelah endpoint penyimpanan stok awal dan modal terintegrasi agar tidak terjadi pencatatan parsial.</div></section>
+            <section class="report-panel">
+              <div class="section-heading"><div><p class="section-kicker">PERSEDIAAN HARIAN</p><h3>Input Stok Awal &amp; Modal Kembalian</h3><p>Catat persediaan awal setiap produk dan uang modal sebelum penjualan dimulai.</p></div><span class="section-icon">▦</span></div>
+              <div id="stockOutletWrap" class="field-group"><label class="field-label" for="stockOutletSelect">Pilih Outlet</label><select id="stockOutletSelect" class="report-select"><option value="">Memuat outlet...</option></select></div>
+              <div id="stockMeta" class="report-status">Pilih outlet untuk memuat persiapan hari ini.</div>
+              <label class="field-label" for="changeFundInput">Modal Kembalian (Rp)</label><input id="changeFundInput" class="report-select" type="number" min="0" step="1" inputmode="numeric" value="0" placeholder="Masukkan modal kembalian">
+              <div class="section-heading compact-heading"><div><p class="section-kicker">STOK AWAL PRODUK</p><h3>Jumlah Persediaan</h3><p>Masukkan stok dalam satuan yang digunakan pada master produk.</p></div></div>
+              <div id="stockEntryList" class="product-entry-list"><div class="report-status">Memuat daftar produk...</div></div>
+              <div id="stockStatus" class="report-status" aria-live="polite"></div>
+              <button id="saveStockPreparationButton" class="report-action" type="button" disabled><span>Simpan Stok Awal &amp; Modal</span><b>→</b></button>
+              <p class="report-footnote">Tanggal otomatis mengikuti WIB. Penyimpanan memperbarui persiapan outlet dan tanggal yang sama, bukan membuat catatan ganda.</p>
+            </section>
           </section>
           <section class="app-page" id="pageInput">
       <section id="ownerReportPanel" class="report-panel hidden" aria-labelledby="ownerReportTitle">

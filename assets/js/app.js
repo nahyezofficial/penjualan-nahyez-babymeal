@@ -407,12 +407,59 @@
   $("saveOutletFuelButton").addEventListener("click", saveOutletFuelSettings);
   $("saveRouteFuelButton").addEventListener("click", saveRouteFuelSettings);
 
+  // Tahap 7A — persiapan stok awal dan modal kembalian dalam satu penyimpanan.
+  let stockProducts = [];
+  function stockStatus(message, type = "") { const el=$("stockStatus"); el.textContent=message; el.className=`report-status ${type}`.trim(); }
+  async function loadStockPreparation() {
+    const user=window.currentNahyezUser; if(!user) return;
+    const select=$("stockOutletSelect"), wrap=$("stockOutletWrap");
+    if(user.role==="OWNER") {
+      wrap.classList.remove("hidden");
+      try {
+        if(!ownerOutletList.length) { const r=await NahyezAPI.getActiveOutlets(); ownerOutletList=r.outlet||[]; }
+        const prior=select.value; select.innerHTML='<option value="">-- Pilih outlet --</option>';
+        ownerOutletList.forEach(o=>{const op=document.createElement("option");op.value=o.outletId;op.textContent=o.namaOutlet;select.appendChild(op);});
+        if(prior && ownerOutletList.some(o=>o.outletId===prior)) select.value=prior;
+      } catch(e) { stockStatus(e.message||"Gagal memuat outlet.","error"); return; }
+      if(!select.value) { $("stockMeta").textContent="Pilih outlet untuk memuat persiapan hari ini."; $("stockEntryList").replaceChildren(); $("saveStockPreparationButton").disabled=true; return; }
+    } else { wrap.classList.add("hidden"); }
+    const outletId=user.role==="OWNER"?select.value:"";
+    $("saveStockPreparationButton").disabled=true;
+    $("stockMeta").textContent="Memuat persiapan stok hari ini...";
+    try {
+      const r=await NahyezAPI.getDailyPreparation(outletId);
+      stockProducts=r.produk||[]; $("stockMeta").textContent=`Outlet: ${user.role==="OWNER"?(ownerOutletList.find(o=>o.outletId===outletId)||{}).namaOutlet||outletId:user.outletNama||"Outlet Crew"} · Tanggal: ${r.tanggal} (WIB)`;
+      $("changeFundInput").value=r.persiapan?Number(r.persiapan.modalKembalian)||0:0;
+      const host=$("stockEntryList"); host.replaceChildren();
+      stockProducts.forEach(item=>{const row=document.createElement("div");row.className="product-entry";row.dataset.productId=item.produkId;row.innerHTML='<div class="product-entry-main"><strong></strong><small></small></div><div><label>Stok awal</label><input class="stock-qty-input" type="number" min="0" step="1" inputmode="numeric"></div>';row.querySelector("strong").textContent=item.namaProduk;row.querySelector("small").textContent=`${item.kategoriStok||"Produk"} · ${item.satuanStok||"Satuan"} · Konversi stok ${item.konversiStok}`;row.querySelector("input").value=Number(item.jumlahStokAwal)||0;host.appendChild(row);});
+      stockStatus(r.tersimpan?"Persiapan hari ini sudah tersimpan. Anda dapat memperbarui jumlah jika diperlukan.":"Belum ada persiapan hari ini. Silakan isi stok awal dan modal kembalian.",r.tersimpan?"success":"warning");
+      $("saveStockPreparationButton").disabled=!stockProducts.length;
+    } catch(e) { stockStatus(e.message||"Gagal memuat persiapan harian.","error"); $("stockMeta").textContent="Persiapan gagal dimuat."; }
+  }
+  async function saveStockPreparation() {
+    const user=window.currentNahyezUser; if(!user||!stockProducts.length)return;
+    const modal=Number($("changeFundInput").value);
+    if(!Number.isSafeInteger(modal)||modal<0){stockStatus("Modal kembalian harus berupa angka Rupiah bulat minimal 0.","error");return;}
+    const daftarStok=[]; let invalid=false;
+    document.querySelectorAll("#stockEntryList .product-entry").forEach(row=>{const qty=Number(row.querySelector("input").value);if(!Number.isSafeInteger(qty)||qty<0)invalid=true;daftarStok.push({produkId:row.dataset.productId,jumlahStokAwal:qty});});
+    if(invalid||daftarStok.length!==stockProducts.length){stockStatus("Seluruh stok harus berupa bilangan bulat 0 atau lebih.","error");return;}
+    const outletId=user.role==="OWNER"?$("stockOutletSelect").value:"";
+    if(user.role==="OWNER"&&!outletId){stockStatus("Pilih outlet terlebih dahulu.","warning");return;}
+    const btn=$("saveStockPreparationButton");btn.disabled=true;btn.querySelector("span").textContent="Menyimpan...";stockStatus("Menyimpan stok awal dan modal kembalian secara bersamaan...");
+    try {const r=await NahyezAPI.saveDailyPreparation({outletId,modalKembalian:modal,daftarStok});stockStatus(`${r.pesan} ${r.jumlahProduk} jenis produk tersimpan.`,"success");}
+    catch(e){stockStatus(e.message||"Gagal menyimpan persiapan.","error");}
+    finally{btn.disabled=false;btn.querySelector("span").textContent="Simpan Stok Awal & Modal";}
+  }
+  $("stockOutletSelect").addEventListener("change",loadStockPreparation);
+  $("saveStockPreparationButton").addEventListener("click",saveStockPreparation);
+
   // Sidebar navigation V2.5. Dashboard content is retained; unfinished modules are clearly marked.
   function activatePage(pageId) {
     document.querySelectorAll(".app-page").forEach(page => page.classList.toggle("active", page.id === pageId));
     document.querySelectorAll(".nav-item").forEach(button => button.classList.toggle("active", button.dataset.page === pageId));
     const active = document.querySelector(`.nav-item[data-page="${pageId}"]`);
     if (pageId === "pageSettings") loadOperationalSettings();
+    if (pageId === "pageStock") loadStockPreparation();
     $("activePageTitle").textContent = active ? active.textContent.trim() : "Dashboard";
     $("appSidebar").classList.remove("open");
   }

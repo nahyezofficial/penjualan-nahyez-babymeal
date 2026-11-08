@@ -40,6 +40,8 @@
     }),
     getSession: () => request("/session"),
     getActiveOutlets: () => request("/api/outlet/aktif"),
+    getDailyPreparation: outletId => request(`/api/persiapan-harian${outletId ? `?outletId=${encodeURIComponent(outletId)}` : ""}`),
+    saveDailyPreparation: data => request("/api/persiapan-harian", { method: "POST", body: data }),
     getOutletFuelSettings: () => request("/api/pengaturan/bensin-outlet"),
     saveOutletFuelSettings: daftarTarif => request("/api/pengaturan/bensin-outlet", { method: "POST", body: { daftarTarif } }),
     getRouteFuelSettings: () => request("/api/pengaturan/rute"),
