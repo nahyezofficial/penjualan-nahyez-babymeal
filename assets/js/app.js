@@ -56,6 +56,9 @@
     $("crewComingCard").classList.toggle("hidden", user.role === "OWNER");
     document.querySelectorAll(".nav-item[data-page=\"pageSettings\"]").forEach(el => el.classList.toggle("hidden", user.role !== "OWNER"));
     $("pageSettings").classList.toggle("hidden", user.role !== "OWNER");
+    // Persiapan stok awal dan modal kembalian adalah kewenangan Owner saja.
+    document.querySelectorAll(".nav-item[data-page=\"pageStock\"]").forEach(el => el.classList.toggle("hidden", user.role !== "OWNER"));
+    $("pageStock").classList.toggle("hidden", user.role !== "OWNER");
     if (user.role === "OWNER") loadOwnerOutlets();
     else initializeCrewWorkspace();
   }
@@ -407,46 +410,85 @@
   $("saveOutletFuelButton").addEventListener("click", saveOutletFuelSettings);
   $("saveRouteFuelButton").addEventListener("click", saveRouteFuelSettings);
 
-  // Tahap 7A — persiapan stok awal dan modal kembalian dalam satu penyimpanan.
+  // Tahap 7A/7B — stok bubur dan puding dicatat sebagai total cup per kategori.
   let stockProducts = [];
+  let stockEntryGroups = [];
   function stockStatus(message, type = "") { const el=$("stockStatus"); el.textContent=message; el.className=`report-status ${type}`.trim(); }
+  function stockCategory(product) {
+    const category=String(product.kategoriStok||"").toLowerCase();
+    const name=String(product.namaProduk||"").toLowerCase();
+    if(category.includes("bubur") || name.includes("bubur")) return "bubur";
+    if(category.includes("puding") || name.includes("puding")) return "puding";
+    if(category.includes("nasi") || name.includes("nasi tim")) return "nasitim";
+    if(category.includes("oat") || name.includes("oatmeal")) return "oatmeal";
+    if(category.includes("abon") || name.includes("abon")) return "abon";
+    return `produk:${product.produkId}`;
+  }
+  function buildStockEntryGroups(products, preparation) {
+    const buckets=new Map();
+    products.forEach(product=>{const key=stockCategory(product);if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(product);});
+    const labels={bubur:{name:"Stok Awal Bubur",unit:"Cup",help:"Total seluruh cup bubur. Tidak dipisah menurut varian penjualan."},puding:{name:"Stok Awal Puding",unit:"Cup",help:"Total seluruh cup puding. Tidak dipisah menurut ukuran kemasan."}};
+    const summary=preparation||{};
+    return [...buckets.entries()].map(([key,items])=>{
+      const canonical=[...items].sort((a,b)=>Number(a.konversiStok)-Number(b.konversiStok))[0];
+      let qty=0;
+      if(key==="bubur") qty=Number(summary.stokAwalBubur ?? items.reduce((n,x)=>n+Number(x.jumlahStokAwal||0),0))||0;
+      else if(key==="puding") qty=Number(summary.stokAwalPuding ?? items.reduce((n,x)=>n+Number(x.jumlahStokAwal||0),0))||0;
+      else qty=Number(items[0].jumlahStokAwal)||0;
+      return {key,items,canonical,qty,label:labels[key]?.name||items[0].namaProduk,unit:labels[key]?.unit||items[0].satuanStok||"Satuan",help:labels[key]?.help||`${items[0].kategoriStok||"Produk"} · Konversi stok ${items[0].konversiStok}`};
+    });
+  }
   async function loadStockPreparation() {
-    const user=window.currentNahyezUser; if(!user) return;
+    const user=window.currentNahyezUser; if(!user || user.role!=="OWNER") return;
     const select=$("stockOutletSelect"), wrap=$("stockOutletWrap");
-    if(user.role==="OWNER") {
-      wrap.classList.remove("hidden");
-      try {
-        if(!ownerOutletList.length) { const r=await NahyezAPI.getActiveOutlets(); ownerOutletList=r.outlet||[]; }
-        const prior=select.value; select.innerHTML='<option value="">-- Pilih outlet --</option>';
-        ownerOutletList.forEach(o=>{const op=document.createElement("option");op.value=o.outletId;op.textContent=o.namaOutlet;select.appendChild(op);});
-        if(prior && ownerOutletList.some(o=>o.outletId===prior)) select.value=prior;
-      } catch(e) { stockStatus(e.message||"Gagal memuat outlet.","error"); return; }
-      if(!select.value) { $("stockMeta").textContent="Pilih outlet untuk memuat persiapan hari ini."; $("stockEntryList").replaceChildren(); $("saveStockPreparationButton").disabled=true; return; }
-    } else { wrap.classList.add("hidden"); }
-    const outletId=user.role==="OWNER"?select.value:"";
+    wrap.classList.remove("hidden");
+    try {
+      if(!ownerOutletList.length) { const r=await NahyezAPI.getActiveOutlets(); ownerOutletList=r.outlet||[]; }
+      const prior=select.value; select.innerHTML='<option value="">-- Pilih outlet --</option>';
+      ownerOutletList.forEach(o=>{const op=document.createElement("option");op.value=o.outletId;op.textContent=o.namaOutlet;select.appendChild(op);});
+      if(prior && ownerOutletList.some(o=>o.outletId===prior)) select.value=prior;
+    } catch(e) { stockStatus(e.message||"Gagal memuat outlet.","error"); return; }
+    if(!select.value) { $("stockMeta").textContent="Pilih outlet untuk memuat persiapan hari ini."; $("stockEntryList").replaceChildren(); $("saveStockPreparationButton").disabled=true; return; }
+    const outletId=select.value;
     $("saveStockPreparationButton").disabled=true;
     $("stockMeta").textContent="Memuat persiapan stok hari ini...";
     try {
       const r=await NahyezAPI.getDailyPreparation(outletId);
-      stockProducts=r.produk||[]; $("stockMeta").textContent=`Outlet: ${user.role==="OWNER"?(ownerOutletList.find(o=>o.outletId===outletId)||{}).namaOutlet||outletId:user.outletNama||"Outlet Crew"} · Tanggal: ${r.tanggal} (WIB)`;
+      stockProducts=r.produk||[];
+      $("stockMeta").textContent=`Outlet: ${(ownerOutletList.find(o=>o.outletId===outletId)||{}).namaOutlet||outletId} · Tanggal: ${r.tanggal} (WIB)`;
       $("changeFundInput").value=r.persiapan?Number(r.persiapan.modalKembalian)||0:0;
-      const host=$("stockEntryList"); host.replaceChildren();
-      stockProducts.forEach(item=>{const row=document.createElement("div");row.className="product-entry";row.dataset.productId=item.produkId;row.innerHTML='<div class="product-entry-main"><strong></strong><small></small></div><div><label>Stok awal</label><input class="stock-qty-input" type="number" min="0" step="1" inputmode="numeric"></div>';row.querySelector("strong").textContent=item.namaProduk;row.querySelector("small").textContent=`${item.kategoriStok||"Produk"} · ${item.satuanStok||"Satuan"} · Konversi stok ${item.konversiStok}`;row.querySelector("input").value=Number(item.jumlahStokAwal)||0;host.appendChild(row);});
+      stockEntryGroups=buildStockEntryGroups(stockProducts,r.persiapan);
+      const host=$("stockEntryList");host.replaceChildren();
+      stockEntryGroups.forEach(group=>{
+        const row=document.createElement("div");row.className="product-entry stock-entry-row";row.dataset.groupKey=group.key;
+        row.innerHTML='<div class="product-entry-main"><strong></strong><small></small></div><div><label></label><input class="stock-qty-input" type="number" min="0" step="1" inputmode="numeric"></div>';
+        row.querySelector("strong").textContent=group.label;
+        row.querySelector("small").textContent=group.help;
+        row.querySelector("label").textContent=`Stok awal (${group.unit})`;
+        row.querySelector("input").value=group.qty;
+        host.appendChild(row);
+      });
       stockStatus(r.tersimpan?"Persiapan hari ini sudah tersimpan. Anda dapat memperbarui jumlah jika diperlukan.":"Belum ada persiapan hari ini. Silakan isi stok awal dan modal kembalian.",r.tersimpan?"success":"warning");
-      $("saveStockPreparationButton").disabled=!stockProducts.length;
+      $("saveStockPreparationButton").disabled=!stockEntryGroups.length;
     } catch(e) { stockStatus(e.message||"Gagal memuat persiapan harian.","error"); $("stockMeta").textContent="Persiapan gagal dimuat."; }
   }
   async function saveStockPreparation() {
-    const user=window.currentNahyezUser; if(!user||!stockProducts.length)return;
+    const user=window.currentNahyezUser;if(!user||user.role!=="OWNER"||!stockEntryGroups.length)return;
     const modal=Number($("changeFundInput").value);
     if(!Number.isSafeInteger(modal)||modal<0){stockStatus("Modal kembalian harus berupa angka Rupiah bulat minimal 0.","error");return;}
-    const daftarStok=[]; let invalid=false;
-    document.querySelectorAll("#stockEntryList .product-entry").forEach(row=>{const qty=Number(row.querySelector("input").value);if(!Number.isSafeInteger(qty)||qty<0)invalid=true;daftarStok.push({produkId:row.dataset.productId,jumlahStokAwal:qty});});
-    if(invalid||daftarStok.length!==stockProducts.length){stockStatus("Seluruh stok harus berupa bilangan bulat 0 atau lebih.","error");return;}
-    const outletId=user.role==="OWNER"?$("stockOutletSelect").value:"";
-    if(user.role==="OWNER"&&!outletId){stockStatus("Pilih outlet terlebih dahulu.","warning");return;}
+    const daftarStok=stockProducts.map(p=>({produkId:p.produkId,jumlahStokAwal:0}));
+    let invalid=false;
+    document.querySelectorAll("#stockEntryList .stock-entry-row").forEach(row=>{
+      const group=stockEntryGroups.find(g=>g.key===row.dataset.groupKey);const qty=Number(row.querySelector("input").value);
+      if(!group||!Number.isSafeInteger(qty)||qty<0){invalid=true;return;}
+      // Satu nilai total cup disimpan pada satu produk representatif kategori;
+      // PersiapanHarian menyimpan total kategori yang dipakai untuk saldo stok.
+      const target=daftarStok.find(x=>x.produkId===group.canonical.produkId);if(target)target.jumlahStokAwal=qty;else invalid=true;
+    });
+    if(invalid){stockStatus("Seluruh stok harus berupa bilangan bulat 0 atau lebih.","error");return;}
+    const outletId=$("stockOutletSelect").value;if(!outletId){stockStatus("Pilih outlet terlebih dahulu.","warning");return;}
     const btn=$("saveStockPreparationButton");btn.disabled=true;btn.querySelector("span").textContent="Menyimpan...";stockStatus("Menyimpan stok awal dan modal kembalian secara bersamaan...");
-    try {const r=await NahyezAPI.saveDailyPreparation({outletId,modalKembalian:modal,daftarStok});stockStatus(`${r.pesan} ${r.jumlahProduk} jenis produk tersimpan.`,"success");}
+    try {const r=await NahyezAPI.saveDailyPreparation({outletId,modalKembalian:modal,daftarStok});stockStatus(`${r.pesan} ${r.jumlahProduk} baris produk tersimpan; stok bubur dan puding dicatat sebagai total cup.`,"success");await loadStockPreparation();}
     catch(e){stockStatus(e.message||"Gagal menyimpan persiapan.","error");}
     finally{btn.disabled=false;btn.querySelector("span").textContent="Simpan Stok Awal & Modal";}
   }

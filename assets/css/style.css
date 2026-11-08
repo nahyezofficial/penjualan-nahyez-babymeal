@@ -146,3 +146,11 @@ body{
 
 /* V2.6 — owner tariff settings */
 .settings-subhead{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:4px 0 14px}.settings-subhead h4{margin:0 0 4px;font-size:15px;color:var(--ink)}.settings-subhead p{margin:0;color:var(--muted);font-size:11px}.secondary-action{border:1px solid var(--line);background:#fff;color:#bd4e7e;border-radius:9px;padding:9px 12px;font:600 11px 'DM Sans';cursor:pointer}.settings-list{display:grid;gap:9px;margin:12px 0}.settings-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,190px);gap:14px;align-items:center;padding:13px;border:1px solid var(--line);border-radius:11px;background:#fff}.settings-row strong{display:block;font-size:12px;color:var(--ink)}.settings-row small{display:block;margin-top:4px;color:var(--muted);font-size:10px}.settings-row label{font-size:10px;color:var(--muted);font-weight:700}.settings-row input{display:block;width:100%;height:39px;margin-top:5px;padding:0 10px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:#fff;font:600 12px 'DM Sans'}.settings-row input:focus{outline:2px solid #f5c2d6;border-color:#dc79a1}.settings-row input:disabled{background:#f8f4f6;color:#998b92}.settings-summary{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.settings-summary span{padding:6px 9px;border-radius:20px;background:#fff0f6;color:#b94c7c;font-size:10px;font-weight:700}@media(max-width:560px){.settings-row{grid-template-columns:1fr}.settings-subhead{align-items:flex-start}.settings-row input{max-width:none}}
+
+/* V2.8 — pemisah visual bagian modal dan stok awal */
+.stock-section-heading{margin-top:30px;margin-bottom:16px}
+.stock-section-heading h3{font-size:22px;letter-spacing:-.25px}
+.stock-section-heading .section-kicker{font-size:10px}
+.stock-entry-row{grid-template-columns:minmax(0,1fr) 110px}
+.stock-entry-row .stock-qty-input{width:100%}
+@media(max-width:760px){.stock-section-heading{margin-top:26px}.stock-section-heading h3{font-size:20px}}
