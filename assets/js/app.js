@@ -225,6 +225,7 @@
     lastTransactionPreview = null;
     $("reportReviewPanel").classList.add("hidden");
     $("reportWorkspace").classList.remove("hidden");
+    if (window.currentNahyezUser?.role === "OWNER") $("ownerReportPanel").classList.remove("hidden");
     $("workspaceMeta").textContent =
       `Outlet: ${outletName || "—"} · Tanggal: ${report.Tanggal || "hari ini (WIB)"} · Status: ${report.StatusLaporan || "DRAFT"} · ID: ${report.LaporanID}`;
     $("workspaceTitle").textContent = "Rincian Produk Terjual";
@@ -350,19 +351,61 @@
     const stockRows=Object.entries(stock).map(([k,v])=>`<div class="review-stock"><span>${({bubur:'Bubur',puding:'Puding',nasitim:'Nasi Tim',oatmeal:'Oatmeal',abon:'Abon'})[k]||k}</span><strong>${v}</strong></div>`).join('');
     $('reviewContent').innerHTML=`<div class="review-summary-grid"><div><small>Omzet Produk</small><strong>${money(preview.omzet)}</strong></div><div><small>QRIS</small><strong>${money(preview.qris)}</strong></div><div><small>Transfer</small><strong>${money(preview.transferPembayaran)}</strong></div><div><small>Piutang Baru</small><strong>${money(preview.totalDebt)}</strong></div><div><small>Pembayaran Piutang</small><strong>${money(preview.totalPaid)}</strong></div><div><small>Daily Fee</small><strong>${money(preview.dailyFee)}</strong></div><div><small>Modal Kembalian</small><strong>${money(preview.modalKembalian)}</strong></div><div class="review-highlight"><small>Estimasi Setoran Tunai</small><strong>${money(preview.cash)}</strong></div></div><h4>Rincian Produk</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Produk</th><th>Terjual</th><th>Gratis</th><th>Subtotal</th></tr></thead><tbody>${productRows}</tbody></table></div><h4>Piutang Baru</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Pelanggan</th><th>PelangganID</th><th>Nominal</th></tr></thead><tbody>${debtRows||'<tr><td colspan="3">Tidak ada piutang baru.</td></tr>'}</tbody></table></div><h4>Pembayaran Piutang Lama</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Pelanggan</th><th>PelangganID</th><th>Nominal</th></tr></thead><tbody>${paidRows||'<tr><td colspan="3">Tidak ada pembayaran piutang.</td></tr>'}</tbody></table></div><h4>Pengambilan Stok</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Rute</th><th>Jumlah Cup</th><th>Tarif Bensin</th></tr></thead><tbody>${transferRows||'<tr><td colspan="3">Tidak ada transfer stok.</td></tr>'}</tbody></table></div><h4>Perhitungan Daily Fee</h4><div class="review-list"><span>Fee dasar</span><b>${money(fee.feeBase)}</b><span>Bonus cup bubur (${fee.totalCupBubur} × ${money(fee.bonusCup)})</span><b>${money(fee.bonusTotal)}</b><span>Bonus target (${fee.targets} target)</span><b>${money(fee.bonusTargetTotal)}</b><span>Bensin outlet</span><b>${money(fee.fuelOutlet)}</b><span>Bensin transfer</span><b>${money(fee.fuelTransfer)}</b></div><h4>Sisa Stok Setelah Transaksi</h4><div class="review-stock-grid">${stockRows}</div><p class="report-footnote">Outlet: ${escHtml(preview.outlet.namaOutlet)} · Tanggal: ${escHtml(preview.tanggal)} WIB · ID: ${escHtml(preview.laporanId)}</p>`;
   }
+  function showReviewPage(){
+    // Mode review menggantikan formulir input, bukan ditambahkan di bawahnya.
+    $('reportWorkspace').classList.add('hidden');
+    $('ownerReportPanel').classList.add('hidden');
+    $('reportReviewPanel').classList.remove('hidden');
+    $('reportReviewPanel').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function showInputPage(){
+    $('reportReviewPanel').classList.add('hidden');
+    $('reportWorkspace').classList.remove('hidden');
+    if(window.currentNahyezUser?.role==='OWNER') $('ownerReportPanel').classList.remove('hidden');
+    $('reportWorkspace').scrollIntoView({behavior:'smooth',block:'start'});
+  }
   async function reviewIntegratedReport(){
-    if(!activeReport)return;const btn=$('saveProductDetailsButton');btn.disabled=true;btn.querySelector('span').textContent='Memeriksa...';setWorkspaceStatus('Memvalidasi seluruh komponen laporan di server...');
-    try{const preview=await NahyezAPI.previewIntegratedReport(collectIntegratedPayload());lastTransactionPreview=preview;renderReview(preview);$('reportReviewPanel').classList.remove('hidden');$('reviewStatus').textContent='Pemeriksaan berhasil. Jika semua data sudah benar, tekan Submit Draft Laporan.';$('reviewStatus').className='report-status success';$('reportReviewPanel').scrollIntoView({behavior:'smooth',block:'start'});}
-    catch(e){setWorkspaceStatus(e.message||'Validasi laporan gagal. Periksa kembali seluruh input.','error');}
-    finally{btn.disabled=false;btn.querySelector('span').textContent='Review Laporan';}
+    if(!activeReport)return;
+    const btn=$('saveProductDetailsButton');
+    btn.disabled=true;btn.querySelector('span').textContent='Memeriksa...';
+    setWorkspaceStatus('Memvalidasi seluruh komponen laporan di server...');
+    try{
+      const preview=await NahyezAPI.previewIntegratedReport(collectIntegratedPayload());
+      lastTransactionPreview=preview;
+      renderReview(preview);
+      $('reviewStatus').textContent='Pemeriksaan berhasil. Periksa kembali seluruh rincian sebelum Submit Laporan.';
+      $('reviewStatus').className='report-status success';
+      showReviewPage();
+    }catch(e){
+      setWorkspaceStatus(e.message||'Validasi laporan gagal. Periksa kembali seluruh input.','error');
+    }finally{
+      btn.disabled=false;btn.querySelector('span').textContent='Review Laporan';
+    }
   }
   async function submitIntegratedReport(){
-    if(!activeReport||!lastTransactionPreview)return;const btn=$('submitIntegratedReportButton');btn.disabled=true;btn.querySelector('span').textContent='Mengirim...';$('reviewStatus').textContent='Menyimpan seluruh komponen laporan secara bersamaan...';$('reviewStatus').className='report-status';
-    try{const result=await NahyezAPI.submitIntegratedReport(collectIntegratedPayload());$('reviewStatus').textContent=`${result.pesan} Omzet ${formatRupiah(result.omzet)} · Daily Fee ${formatRupiah(result.dailyFee)} · Setoran tunai ${formatRupiah(result.setoranTunai)}.`;$('reviewStatus').className='report-status success';activeReport.SudahDisubmit=true;$('saveProductDetailsButton').disabled=true;document.querySelectorAll('#reportWorkspace input,#reportWorkspace select,#reportWorkspace textarea,#reportWorkspace button').forEach(el=>el.disabled=true);btn.querySelector('span').textContent='Draft Berhasil Disubmit';$('reviewContent').insertAdjacentHTML('beforeend',`<h4>Sisa Stok Tersimpan</h4><div class="review-stock-grid">${Object.entries(result.sisaStok||{}).map(([k,v])=>`<div class="review-stock"><span>${escHtml(k)}</span><strong>${v}</strong></div>`).join('')}</div>`);}
-    catch(e){$('reviewStatus').textContent=e.message||'Submit laporan gagal. Data belum dinyatakan tersimpan.';$('reviewStatus').className='report-status error';btn.disabled=false;btn.querySelector('span').textContent='Coba Submit Lagi';}
+    if(!activeReport||!lastTransactionPreview)return;
+    const btn=$('submitIntegratedReportButton');
+    btn.disabled=true;btn.querySelector('span').textContent='Mengirim...';
+    $('reviewStatus').textContent='Menyimpan seluruh komponen laporan secara bersamaan...';
+    $('reviewStatus').className='report-status';
+    try{
+      const result=await NahyezAPI.submitIntegratedReport(collectIntegratedPayload());
+      $('reviewStatus').textContent=`${result.pesan} Omzet ${formatRupiah(result.omzet)} · Daily Fee ${formatRupiah(result.dailyFee)} · Setoran tunai ${formatRupiah(result.setoranTunai)}.`;
+      $('reviewStatus').className='report-status success';
+      activeReport.SudahDisubmit=true;
+      $('saveProductDetailsButton').disabled=true;
+      document.querySelectorAll('#reportWorkspace input,#reportWorkspace select,#reportWorkspace textarea,#reportWorkspace button').forEach(el=>el.disabled=true);
+      btn.querySelector('span').textContent='Laporan Berhasil Disubmit';
+      $('backToReportButton').disabled=true;
+      $('reviewContent').insertAdjacentHTML('beforeend',`<h4>Sisa Stok Tersimpan</h4><div class="review-stock-grid">${Object.entries(result.sisaStok||{}).map(([k,v])=>`<div class="review-stock"><span>${escHtml(k)}</span><strong>${v}</strong></div>`).join('')}</div>`);
+    }catch(e){
+      $('reviewStatus').textContent=e.message||'Submit laporan gagal. Data belum dinyatakan tersimpan.';
+      $('reviewStatus').className='report-status error';
+      btn.disabled=false;btn.querySelector('span').textContent='Coba Submit Lagi';
+    }
   }
   $('saveProductDetailsButton').addEventListener('click',reviewIntegratedReport);
-  $('backToReportButton').addEventListener('click',()=>{$('reportReviewPanel').classList.add('hidden');$('reportWorkspace').scrollIntoView({behavior:'smooth',block:'start'});});
+  $('backToReportButton').addEventListener('click',showInputPage);
   $('submitIntegratedReportButton').addEventListener('click',submitIntegratedReport);
   $('addCustomerButton').addEventListener('click',async()=>{const nama=window.prompt('Nama pelanggan:');if(!nama||!nama.trim())return;try{await NahyezAPI.addTransactionCustomer({outletId:activeReport?.OutletID,namaPelanggan:nama.trim()});await loadTransactionReferences();setWorkspaceStatus('Pelanggan baru berhasil ditambahkan. Identitas transaksi menggunakan PelangganID.','success');}catch(e){setWorkspaceStatus(e.message||'Gagal menambahkan pelanggan.','error');}});
   $('addDebtRow').addEventListener('click',()=>addCustomerAmountRow('newDebtRows','debt'));
