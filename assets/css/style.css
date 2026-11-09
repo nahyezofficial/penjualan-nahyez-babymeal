@@ -154,3 +154,42 @@ body{
 .stock-entry-row{grid-template-columns:minmax(0,1fr) 110px}
 .stock-entry-row .stock-qty-input{width:100%}
 @media(max-width:760px){.stock-section-heading{margin-top:26px}.stock-section-heading h3{font-size:20px}}
+
+/* V3.0 — transaksi terpadu dan panel review */
+.transaction-subpanel{margin:18px 0;padding:18px;background:#fffafd;box-shadow:none}
+.transaction-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.transaction-grid label{font-size:11px;color:var(--muted);font-weight:700}
+.transaction-grid input,.transaction-row select,.transaction-row input{display:block;width:100%;height:42px;margin-top:6px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font:600 12px 'DM Sans'}
+.transaction-subhead{margin:24px 0 10px;align-items:center}
+.transaction-subhead h3{font-size:16px}
+.transaction-rows{display:grid;gap:8px}
+.transaction-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,170px) 34px;gap:8px;align-items:center}
+.transaction-row select,.transaction-row input{margin:0}
+.remove-row{border:1px solid var(--line);background:#fff5f8;color:#c94f82;border-radius:8px;height:36px;min-width:34px;font-size:18px;cursor:pointer}
+.transfer-rows{display:grid;gap:12px}
+.transfer-card{border:1px solid var(--line);border-radius:12px;padding:13px;background:#fff}
+.transfer-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;color:var(--ink);font-size:12px}
+.transfer-card-head .remove-row{height:28px;padding:0 9px;font-size:10px}
+.transfer-product-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:10px}
+.transfer-product{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid #f5e7ed;border-radius:8px;padding:8px;font-size:10px;color:var(--ink)}
+.transfer-product small{display:block;color:var(--muted);font-size:9px;margin-top:2px}
+.transfer-product input{width:72px;height:34px;border:1px solid var(--line);border-radius:7px;padding:0 7px;font:600 11px 'DM Sans'}
+.review-content h4{margin:20px 0 10px;font-size:13px;color:var(--ink)}
+.review-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.review-summary-grid>div{padding:12px;border:1px solid var(--line);border-radius:10px;background:#fffafd}
+.review-summary-grid small{display:block;color:var(--muted);font-size:9px;margin-bottom:6px}
+.review-summary-grid strong{font-size:14px;color:var(--ink)}
+.review-summary-grid .review-highlight{grid-column:1/-1;background:#fff0f6;border-color:#f2c6d9}
+.review-summary-grid .review-highlight strong{font-size:20px;color:#c94f82}
+.review-table-wrap{overflow-x:auto}
+.review-table{width:100%;border-collapse:collapse;font-size:11px}
+.review-table th,.review-table td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.review-table th{color:var(--muted);font-size:9px}
+.review-list{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:12px;border-radius:10px;background:#fffafd;font-size:11px}
+.review-list span{color:var(--muted)}.review-list b{color:var(--ink)}
+.review-stock-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.review-stock{padding:11px;border:1px solid var(--line);border-radius:9px;background:#fff;text-align:center}
+.review-stock span{display:block;color:var(--muted);font-size:9px}.review-stock strong{display:block;margin-top:5px;color:#28744e;font-size:17px}
+.review-actions{display:grid;grid-template-columns:minmax(120px,.7fr) minmax(0,1.3fr);gap:10px;align-items:center}
+.review-actions .report-action{margin-top:0}.review-actions .secondary-action{height:47px}
+@media(max-width:620px){.transaction-grid,.transfer-product-list{grid-template-columns:1fr}.transaction-row{grid-template-columns:minmax(0,1fr) 105px 32px}.review-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.review-stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.review-actions{grid-template-columns:1fr}.transaction-subpanel{padding:13px}}
