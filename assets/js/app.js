@@ -278,7 +278,9 @@
     if (loadSeq !== workspaceLoadSequence || activeReport?.LaporanID !== report.LaporanID) return;
     if (report.SudahDisubmit) {
       document.querySelectorAll("#reportWorkspace input,#reportWorkspace select,#reportWorkspace textarea,#reportWorkspace button").forEach(el => el.disabled = true);
-      setWorkspaceStatus("Laporan ini sudah berhasil disubmit sebagai Draft. Input dikunci agar transaksi tidak tercatat dua kali.", "success");
+      // Review tetap tersedia sebagai akses baca; seluruh input dan aksi submit tetap terkunci.
+      $("saveProductDetailsButton").disabled = false;
+      setWorkspaceStatus("Laporan ini sudah tercatat disubmit sebagai Draft. Input tetap terkunci untuk mencegah transaksi ganda, tetapi Review Laporan masih dapat dibuka dalam mode baca.", "success");
       return;
     }
     setWorkspaceStatus(
@@ -404,8 +406,16 @@
       const preview=await NahyezAPI.previewIntegratedReport(collectIntegratedPayload());
       lastTransactionPreview=preview;
       renderReview(preview);
-      $('reviewStatus').textContent='Pemeriksaan berhasil. Periksa kembali seluruh rincian sebelum Submit Laporan.';
-      $('reviewStatus').className='report-status success';
+      if(activeReport.SudahDisubmit){
+        $('reviewStatus').textContent='Mode baca: laporan ini sudah tercatat disubmit. Rincian tidak dapat diubah dan Submit ulang dinonaktifkan.';
+        $('reviewStatus').className='report-status success';
+        $('submitIntegratedReportButton').classList.add('hidden');
+        $('backToReportButton').disabled=false;
+      }else{
+        $('reviewStatus').textContent='Pemeriksaan berhasil. Periksa kembali seluruh rincian sebelum Submit Laporan.';
+        $('reviewStatus').className='report-status success';
+        $('submitIntegratedReportButton').classList.remove('hidden');
+      }
       showReviewPage();
     }catch(e){
       setWorkspaceStatus(e.message||'Validasi laporan gagal. Periksa kembali seluruh input.','error');
@@ -424,8 +434,8 @@
       $('reviewStatus').textContent=`${result.pesan} Omzet ${formatRupiah(result.omzet)} · Daily Fee ${formatRupiah(result.dailyFee)} · Setoran tunai ${formatRupiah(result.setoranTunai)}.`;
       $('reviewStatus').className='report-status success';
       activeReport.SudahDisubmit=true;
-      $('saveProductDetailsButton').disabled=true;
       document.querySelectorAll('#reportWorkspace input,#reportWorkspace select,#reportWorkspace textarea,#reportWorkspace button').forEach(el=>el.disabled=true);
+      $('saveProductDetailsButton').disabled=false; // Review tetap aktif; input lain tetap terkunci.
       btn.querySelector('span').textContent='Laporan Berhasil Disubmit';
       btn.classList.add('hidden');
       $('backToReportButton').disabled=true;

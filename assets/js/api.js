@@ -81,7 +81,7 @@
     }),
     getReportDetails: laporanId => request(`/api/laporan/harian/detail?laporanId=${encodeURIComponent(laporanId)}`),
     saveReportDetails: (laporanId, daftarProduk) => request("/api/laporan/harian/detail", {
-      method: "POST", body: { laporanId, daftarProduk }
+      method: "POST", body: { laporanId, daftarProduk }, timeoutMs: 40000
     }),
     getTodayReport: outletId => request(`/api/laporan/harian/hari-ini?outletId=${encodeURIComponent(outletId)}`),
     createDailyReport: outletId => request("/api/laporan/harian", {
