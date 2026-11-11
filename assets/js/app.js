@@ -219,9 +219,13 @@
     }
   }
 
+  let workspaceLoadSequence = 0;
   async function openReportWorkspace(report, outletName, draftBaru = false) {
     if (!report || !report.LaporanID) return;
+    const loadSeq = ++workspaceLoadSequence;
     activeReport = report;
+    activeProducts = [];
+    transactionReference = { rute: [], pelanggan: [] };
     lastTransactionPreview = null;
     $("reportReviewPanel").classList.add("hidden");
     $("reportWorkspace").classList.remove("hidden");
@@ -237,32 +241,55 @@
       setWorkspaceStatus("Laporan sudah final dan tidak dapat diubah.", "warning");
       return;
     }
+
+    // Produk/harga adalah komponen utama formulir. Kegagalan referensi piutang/rute
+    // tidak boleh menghapus formulir produk yang sudah berhasil dimuat.
+    let saved = { detail: [], jumlahBaris: 0 };
+    let productStage = "harga produk";
     try {
       const outletId = report.OutletID || "";
       const result = await NahyezAPI.getProductPrices(outletId);
-      activeProducts = Array.isArray(result.harga) ? result.harga : [];
-      const saved = await NahyezAPI.getReportDetails(report.LaporanID);
-      const savedMap = new Map((Array.isArray(saved.detail) ? saved.detail : []).map(item => [item.produkId, item]));
+      if (loadSeq !== workspaceLoadSequence || activeReport?.LaporanID !== report.LaporanID) return;
+      activeProducts = Array.isArray(result?.harga) ? result.harga : [];
+      productStage = "rincian laporan tersimpan";
+      saved = await NahyezAPI.getReportDetails(report.LaporanID);
+      if (loadSeq !== workspaceLoadSequence || activeReport?.LaporanID !== report.LaporanID) return;
+      const savedMap = new Map((Array.isArray(saved?.detail) ? saved.detail : []).map(item => [item.produkId, item]));
       renderProductEntries(savedMap);
-      await loadTransactionReferences();
-      if (report.SudahDisubmit) {
-        document.querySelectorAll("#reportWorkspace input,#reportWorkspace select,#reportWorkspace textarea,#reportWorkspace button").forEach(el => el.disabled = true);
-        setWorkspaceStatus("Laporan ini sudah berhasil disubmit sebagai Draft. Input dikunci agar transaksi tidak tercatat dua kali.", "success");
-        return;
-      }
-      setWorkspaceStatus(
-        activeProducts.length
-          ? (saved.jumlahBaris
-              ? `Rincian tersimpan berhasil dimuat (${saved.jumlahBaris} jenis produk). Anda dapat memeriksa atau memperbarui jumlahnya.`
-              : `${activeProducts.length} produk aktif tersedia. Belum ada rincian tersimpan; silakan isi jumlah produk.`)
-          : "Tidak ada produk dengan harga aktif untuk outlet ini.",
-        activeProducts.length ? "success" : "warning"
-      );
-      $("saveProductDetailsButton").disabled = !activeProducts.length;
     } catch (error) {
+      console.error(`[Nahyez] Gagal memuat ${productStage} untuk ${report.LaporanID}:`, error);
       $("productEntryList").innerHTML = "";
-      setWorkspaceStatus(error.message || "Gagal memuat produk dan harga.", "error");
+      setWorkspaceStatus(`${error.message || "Gagal memuat formulir."} (tahap: ${productStage})`, "error");
+      return;
     }
+
+    let referenceWarning = "";
+    try {
+      await loadTransactionReferences();
+    } catch (error) {
+      console.error(`[Nahyez] Gagal memuat referensi transaksi untuk ${report.LaporanID}:`, error);
+      transactionReference = { rute: [], pelanggan: [] };
+      renderCustomerRows("newDebtRows", "debt");
+      renderCustomerRows("debtPaymentRows", "payment");
+      renderTransferRows();
+      referenceWarning = ` Referensi piutang/transfer belum termuat: ${error.message || "kesalahan tidak diketahui"}. Form produk tetap dapat digunakan.`;
+    }
+
+    if (loadSeq !== workspaceLoadSequence || activeReport?.LaporanID !== report.LaporanID) return;
+    if (report.SudahDisubmit) {
+      document.querySelectorAll("#reportWorkspace input,#reportWorkspace select,#reportWorkspace textarea,#reportWorkspace button").forEach(el => el.disabled = true);
+      setWorkspaceStatus("Laporan ini sudah berhasil disubmit sebagai Draft. Input dikunci agar transaksi tidak tercatat dua kali.", "success");
+      return;
+    }
+    setWorkspaceStatus(
+      activeProducts.length
+        ? (saved.jumlahBaris
+            ? `Rincian tersimpan berhasil dimuat (${saved.jumlahBaris} jenis produk). Anda dapat memeriksa atau memperbarui jumlahnya.`
+            : `${activeProducts.length} produk aktif tersedia. Belum ada rincian tersimpan; silakan isi jumlah produk.`) + referenceWarning
+        : "Tidak ada produk dengan harga aktif untuk outlet ini.",
+      activeProducts.length ? (referenceWarning ? "warning" : "success") : "warning"
+    );
+    $("saveProductDetailsButton").disabled = !activeProducts.length;
   }
 
   function renderProductEntries(savedMap = new Map()) {
@@ -307,7 +334,8 @@
   function escHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   async function loadTransactionReferences(){
     const outletId=activeReport?.OutletID||'';
-    transactionReference=await NahyezAPI.getTransactionReference(outletId);
+    const result=await NahyezAPI.getTransactionReference(outletId);
+    transactionReference=(result && typeof result==='object')?result:{rute:[],pelanggan:[]};
     renderCustomerRows('newDebtRows','debt');renderCustomerRows('debtPaymentRows','payment');
     renderTransferRows();
   }
