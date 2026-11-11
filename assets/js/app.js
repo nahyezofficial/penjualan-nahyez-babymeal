@@ -396,7 +396,13 @@
       $('saveProductDetailsButton').disabled=true;
       document.querySelectorAll('#reportWorkspace input,#reportWorkspace select,#reportWorkspace textarea,#reportWorkspace button').forEach(el=>el.disabled=true);
       btn.querySelector('span').textContent='Laporan Berhasil Disubmit';
+      btn.classList.add('hidden');
       $('backToReportButton').disabled=true;
+      $('finishSubmittedReportButton').querySelector('span').textContent =
+        window.currentNahyezUser?.role === 'OWNER'
+          ? 'Selesai & Pilih Outlet Berikutnya'
+          : 'Tutup Laporan Hari Ini';
+      $('finishSubmittedReportButton').classList.remove('hidden');
       $('reviewContent').insertAdjacentHTML('beforeend',`<h4>Sisa Stok Tersimpan</h4><div class="review-stock-grid">${Object.entries(result.sisaStok||{}).map(([k,v])=>`<div class="review-stock"><span>${escHtml(k)}</span><strong>${v}</strong></div>`).join('')}</div>`);
     }catch(e){
       $('reviewStatus').textContent=e.message||'Submit laporan gagal. Data belum dinyatakan tersimpan.';
@@ -404,9 +410,58 @@
       btn.disabled=false;btn.querySelector('span').textContent='Coba Submit Lagi';
     }
   }
+  async function finishSubmittedReport(){
+    const isOwner=window.currentNahyezUser?.role==='OWNER';
+    if(!isOwner){
+      $('reviewStatus').textContent='Laporan hari ini sudah berhasil disubmit dan tersimpan. Anda dapat keluar dari akun.';
+      $('finishSubmittedReportButton').classList.add('hidden');
+      return;
+    }
+    activeReport=null;
+    activeProducts=[];
+    lastTransactionPreview=null;
+    transactionReference={rute:[],pelanggan:[]};
+
+    // Bersihkan state visual agar transaksi outlet berikutnya selalu dimulai dari awal.
+    $('reportReviewPanel').classList.add('hidden');
+    $('reportWorkspace').classList.add('hidden');
+    $('reviewContent').innerHTML='';
+    $('reviewStatus').textContent='';
+    $('productEntryList').innerHTML='';
+    $('newDebtRows').innerHTML='';
+    $('debtPaymentRows').innerHTML='';
+    $('stockTransferRows').innerHTML='';
+    $('qrisInput').value='0';
+    $('transferPaymentInput').value='0';
+    $('reportNoteInput').value='';
+    $('productTotal').textContent=formatRupiah(0);
+
+    if(isOwner){
+      $('ownerReportPanel').classList.remove('hidden');
+      $('ownerOutletSelect').disabled=false;
+      $('ownerOutletSelect').value='';
+      $('createOwnerReportButton').disabled=true;
+      $('createOwnerReportButton').classList.add('hidden');
+      setOwnerReportStatus('Laporan sebelumnya sudah tersimpan. Pilih outlet berikutnya untuk memulai laporan baru.','success');
+      activatePage('pageInput');
+      $('ownerReportPanel').scrollIntoView({behavior:'smooth',block:'start'});
+    }else{
+      $('ownerReportPanel').classList.add('hidden');
+      setWorkspaceStatus('Laporan hari ini berhasil disubmit dan tersimpan. Form input telah ditutup.','success');
+      $('reportWorkspace').classList.remove('hidden');
+      $('reportWorkspace').scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    $('finishSubmittedReportButton').classList.add('hidden');
+    $('submitIntegratedReportButton').classList.remove('hidden');
+    $('submitIntegratedReportButton').disabled=false;
+    $('submitIntegratedReportButton').querySelector('span').textContent='Submit Laporan';
+    $('backToReportButton').disabled=false;
+  }
+
   $('saveProductDetailsButton').addEventListener('click',reviewIntegratedReport);
   $('backToReportButton').addEventListener('click',showInputPage);
   $('submitIntegratedReportButton').addEventListener('click',submitIntegratedReport);
+  $('finishSubmittedReportButton').addEventListener('click',finishSubmittedReport);
   $('addCustomerButton').addEventListener('click',async()=>{const nama=window.prompt('Nama pelanggan:');if(!nama||!nama.trim())return;try{await NahyezAPI.addTransactionCustomer({outletId:activeReport?.OutletID,namaPelanggan:nama.trim()});await loadTransactionReferences();setWorkspaceStatus('Pelanggan baru berhasil ditambahkan. Identitas transaksi menggunakan PelangganID.','success');}catch(e){setWorkspaceStatus(e.message||'Gagal menambahkan pelanggan.','error');}});
   $('addDebtRow').addEventListener('click',()=>addCustomerAmountRow('newDebtRows','debt'));
   $('addDebtPaymentRow').addEventListener('click',()=>addCustomerAmountRow('debtPaymentRows','payment'));
