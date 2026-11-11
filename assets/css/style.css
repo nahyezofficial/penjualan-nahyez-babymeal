@@ -193,3 +193,16 @@ body{
 .review-actions{display:grid;grid-template-columns:minmax(120px,.7fr) minmax(0,1.3fr);gap:10px;align-items:center}
 .review-actions .report-action{margin-top:0}.review-actions .secondary-action{height:47px}
 @media(max-width:620px){.transaction-grid,.transfer-product-list{grid-template-columns:1fr}.transaction-row{grid-template-columns:minmax(0,1fr) 105px 32px}.review-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.review-stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.review-actions{grid-template-columns:1fr}.transaction-subpanel{padding:13px}}
+
+/* Resume Laporan V3.0.5 */
+.resume-filters{display:grid;grid-template-columns:repeat(3,minmax(130px,1fr)) auto;gap:12px;align-items:end;margin:18px 0}.resume-filters label{display:grid;gap:6px;font-size:12px;color:#8d7882}.resume-filters input,.resume-filters select{width:100%;min-width:0;border:1px solid #f0dce5;border-radius:10px;padding:10px;background:#fff;color:#574650}.resume-table{min-width:760px}.resume-table td{vertical-align:middle}.resume-status{display:inline-block;padding:5px 8px;border-radius:20px;font-size:11px;background:#fff3e3;color:#a66a20}.resume-status.waiting{background:#fff0f6;color:#cf4e83}.resume-status.final{background:#eaf7ef;color:#278353}.resume-action{border:0;border-radius:8px;padding:8px 10px;background:#e978a5;color:white;font-weight:700;cursor:pointer}.resume-action:disabled{opacity:.5;cursor:not-allowed}@media(max-width:700px){.resume-filters{grid-template-columns:1fr 1fr}.resume-filters label:nth-child(3){grid-column:1/-1}}
+
+
+/* V3.0.5 RC2 - Owner report examination */
+.owner-review-detail{margin-top:24px;padding:22px;border:1px solid var(--line,#f3dce7);border-radius:18px;background:#fffafd;}
+.owner-review-detail h4{margin:22px 0 10px;color:#594650;font-size:14px;}
+.owner-review-detail .info-grid{margin:14px 0;}
+.owner-review-detail .review-table-wrap{margin:8px 0 16px;}
+.owner-review-detail .review-actions{margin-top:18px;}
+.owner-review-open{white-space:nowrap;padding:8px 12px;}
+@media(max-width:700px){.owner-review-detail{padding:14px}.owner-review-detail .review-table-wrap{overflow-x:auto}}

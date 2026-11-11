@@ -84,6 +84,8 @@
       method: "POST", body: { laporanId, daftarProduk }, timeoutMs: 40000
     }),
     getTodayReport: outletId => request(`/api/laporan/harian/hari-ini?outletId=${encodeURIComponent(outletId)}`),
+    getReportResume: filters => { const q=new URLSearchParams(filters||{}); return request(`/api/resume-laporan${q.toString()?`?${q}`:""}`); },
+    approveReport: (laporanId, catatanPersetujuan="") => request("/api/laporan/approve", {method:"POST", body:{laporanId,catatanPersetujuan}, timeoutMs:30000}),
     createDailyReport: outletId => request("/api/laporan/harian", {
       method: "POST", body: { outletId }
     }),

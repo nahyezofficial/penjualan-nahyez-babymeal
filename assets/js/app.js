@@ -55,6 +55,8 @@
     $("ownerReportPanel").classList.toggle("hidden", user.role !== "OWNER");
     $("crewComingCard").classList.add("hidden");
     document.querySelectorAll(".nav-item[data-page=\"pageSettings\"]").forEach(el => el.classList.toggle("hidden", user.role !== "OWNER"));
+    document.querySelectorAll(".nav-item[data-page=\"pageResume\"]").forEach(el => el.classList.toggle("hidden", user.role !== "OWNER"));
+    $("pageResume").classList.toggle("hidden", user.role !== "OWNER");
     $("pageSettings").classList.toggle("hidden", user.role !== "OWNER");
     // Persiapan stok awal dan modal kembalian adalah kewenangan Owner saja.
     document.querySelectorAll(".nav-item[data-page=\"pageStock\"]").forEach(el => el.classList.toggle("hidden", user.role !== "OWNER"));
@@ -685,6 +687,58 @@
   $("stockOutletSelect").addEventListener("change",loadStockPreparation);
   $("saveStockPreparationButton").addEventListener("click",saveStockPreparation);
 
+  function resumeStatusLabel(status){return status==='FINAL'?'Final':status==='MENUNGGU_PEMERIKSAAN'?'Menunggu Pemeriksaan':'Pengecekan Crew';}
+  async function loadReportResume(){
+    const message=$('resumeStatusMessage'), body=$('resumeRows');
+    if(!message||!body||window.currentNahyezUser?.role!=='OWNER')return;
+    message.textContent='Mengambil daftar laporan dari database...';message.className='report-status';
+    body.innerHTML='<tr><td colspan="7">Memuat...</td></tr>';
+    try{
+      const filters={dariTanggal:$('resumeFrom').value,sampaiTanggal:$('resumeTo').value,status:$('resumeStatus').value};
+      Object.keys(filters).forEach(k=>{if(!filters[k])delete filters[k];});
+      const result=await NahyezAPI.getReportResume(filters);
+      const rows=Array.isArray(result.laporan)?result.laporan:[];
+      if(!rows.length){body.innerHTML='<tr><td colspan="7">Belum ada laporan sesuai filter.</td></tr>';message.textContent='Tidak ada laporan yang ditemukan.';message.className='report-status warning';return;}
+      body.innerHTML=rows.map(r=>{const status=String(r.statusLaporan||'DRAFT').toUpperCase();const cls=status==='FINAL'?'final':status==='MENUNGGU_PEMERIKSAAN'?'waiting':'';const action=`<button type="button" class="secondary-action owner-review-open" data-report-id="${escHtml(r.laporanId)}">${status==='MENUNGGU_PEMERIKSAAN'?'Periksa':'Lihat Detail'}</button>`;return `<tr><td>${escHtml(r.tanggal)}</td><td>${escHtml(r.outletId)}</td><td>${escHtml(r.laporanId)}</td><td><span class="resume-status ${cls}">${resumeStatusLabel(status)}</span></td><td>${formatRupiah(r.omzet)}</td><td>${formatRupiah(r.dailyFee)}</td><td>${action}</td></tr>`;}).join('');
+      message.textContent=`${rows.length} laporan ditemukan. Pilih Periksa untuk membuka rincian laporan.`;message.className='report-status success';
+
+    }catch(e){body.innerHTML='<tr><td colspan="7">Gagal memuat laporan.</td></tr>';message.textContent=e.message||'Gagal mengambil resume laporan.';message.className='report-status error';}
+  }
+  async function openOwnerReportReview(laporanId){
+    const panel=$('ownerReviewDetail'),body=$('ownerReviewBody'),statusBox=$('ownerReviewStatus'),approve=$('approveOwnerReport');
+    panel.classList.remove('hidden');body.innerHTML='<div class="report-status">Memuat rincian laporan...</div>';statusBox.textContent='';approve.disabled=true;panel.scrollIntoView({behavior:'smooth',block:'start'});
+    try{
+      const r=await NahyezAPI.getReportDetails(laporanId);const h=r.report||{};const state=String(r.statusLaporan||'').toUpperCase();
+      $('ownerReviewHeading').textContent=`Pemeriksaan ${h.NamaOutlet||r.outletId||'Laporan'}`;$('ownerReviewMeta').textContent=`${h.Tanggal||h.TanggalLaporan||''} · ${laporanId} · ${resumeStatusLabel(state)}`;
+      const rows=(r.detail||[]).map(x=>`<tr><td>${escHtml(x.namaProduk)}</td><td>${x.jumlahTerjual}</td><td>${x.jumlahGratis}</td><td>${formatRupiah(x.subtotal)}</td></tr>`).join('')||'<tr><td colspan="4">Tidak ada rincian produk.</td></tr>';
+      const payments=(r.payments||[]).map(x=>`<tr><td>${escHtml(x.JenisPembayaran)}</td><td>${formatRupiah(x.Nominal)}</td></tr>`).join('')||'<tr><td colspan="2">Tidak ada pembayaran non-tunai.</td></tr>';
+      const debts=(r.debts||[]).map(x=>`<tr><td>${escHtml(x.NamaPelanggan||x.PelangganID)}</td><td>${formatRupiah(x.NominalUtang)}</td></tr>`).join('')||'<tr><td colspan="2">Tidak ada piutang baru.</td></tr>';
+      const paid=(r.debtPayments||[]).map(x=>`<tr><td>${escHtml(x.PelangganID)}</td><td>${formatRupiah(x.NominalPembayaran)}</td></tr>`).join('')||'<tr><td colspan="2">Tidak ada pembayaran piutang.</td></tr>';
+      const transfers=(r.transfers||[]).map(x=>`<tr><td>${escHtml(x.OutletAsal)} → ${escHtml(x.OutletTujuan)}</td><td>${escHtml(x.TotalCupDiambil)}</td><td>${formatRupiah(x.TarifBensin)}</td></tr>`).join('')||'<tr><td colspan="3">Tidak ada transfer stok.</td></tr>';
+      body.innerHTML=`<div class="info-grid"><article class="info-card"><span class="card-label">OMZET</span><strong>${formatRupiah(h.TotalOmzet)}</strong></article><article class="info-card"><span class="card-label">QRIS</span><strong>${formatRupiah(h.TotalQRIS)}</strong></article><article class="info-card"><span class="card-label">TRANSFER</span><strong>${formatRupiah(h.TotalTransfer)}</strong></article><article class="info-card"><span class="card-label">PIUTANG BARU</span><strong>${formatRupiah(h.TotalUtangBaru)}</strong></article><article class="info-card"><span class="card-label">PEMBAYARAN PIUTANG</span><strong>${formatRupiah(h.TotalPembayaranUtang)}</strong></article><article class="info-card"><span class="card-label">DAILY FEE</span><strong>${formatRupiah(h.TotalDailyFee)}</strong></article><article class="info-card"><span class="card-label">SETORAN TUNAI</span><strong>${formatRupiah(h.SetoranTunai)}</strong></article></div>
+      <h4>Rincian Produk</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Produk</th><th>Terjual</th><th>Gratis</th><th>Subtotal</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <h4>Pembayaran Non-Tunai</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Metode</th><th>Nominal</th></tr></thead><tbody>${payments}</tbody></table></div>
+      <h4>Piutang Baru</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Pelanggan</th><th>Nominal</th></tr></thead><tbody>${debts}</tbody></table></div>
+      <h4>Pembayaran Piutang</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Pelanggan ID</th><th>Nominal</th></tr></thead><tbody>${paid}</tbody></table></div>
+      <h4>Pengambilan Stok</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Rute</th><th>Jumlah Cup</th><th>Tarif Bensin</th></tr></thead><tbody>${transfers}</tbody></table></div>
+      <div class="report-status">Catatan Crew: ${escHtml(h.Catatan||'—')}</div>`;
+      approve.dataset.reportId=laporanId;approve.classList.toggle('hidden',state!=='MENUNGGU_PEMERIKSAAN');approve.disabled=state!=='MENUNGGU_PEMERIKSAAN';
+      statusBox.textContent=state==='MENUNGGU_PEMERIKSAAN'?'Periksa seluruh data. Persetujuan akan mengunci laporan menjadi FINAL.':'Laporan ini bukan antrean persetujuan aktif; hanya dapat dilihat.';statusBox.className='report-status '+(state==='MENUNGGU_PEMERIKSAAN'?'success':'warning');
+    }catch(e){body.innerHTML='<div class="report-status error">Gagal memuat detail laporan.</div>';statusBox.textContent=e.message||'Terjadi kesalahan.';statusBox.className='report-status error';}
+  }
+  $('resumeRows')?.addEventListener('click',e=>{const b=e.target.closest('.owner-review-open');if(b)openOwnerReportReview(b.dataset.reportId);});
+  $('closeOwnerReview')?.addEventListener('click',()=>{$('ownerReviewDetail').classList.add('hidden');});
+  $('approveOwnerReport')?.addEventListener('click',async()=>{
+    const btn=$('approveOwnerReport'),id=btn.dataset.reportId;if(!id)return;
+    if(!window.confirm('Setujui laporan ini dan ubah statusnya menjadi FINAL? Setelah disetujui, laporan terkunci dari perubahan Crew.'))return;
+    btn.disabled=true;btn.querySelector('span').textContent='Menyetujui...';$('ownerReviewStatus').textContent='Menyimpan persetujuan Owner...';
+    try{const r=await NahyezAPI.approveReport(id);$('ownerReviewStatus').textContent=r.pesan||'Laporan berhasil menjadi FINAL.';$('ownerReviewStatus').className='report-status success';await loadReportResume();await openOwnerReportReview(id);}
+    catch(e){$('ownerReviewStatus').textContent=e.message||'Persetujuan gagal.';$('ownerReviewStatus').className='report-status error';btn.disabled=false;}
+    finally{btn.querySelector('span').textContent='Setujui Laporan & Jadikan FINAL';}
+  });
+
+  $('reloadResumeButton')?.addEventListener('click',loadReportResume);
+
   // Sidebar navigation V2.5. Dashboard content is retained; unfinished modules are clearly marked.
   function activatePage(pageId) {
     document.querySelectorAll(".app-page").forEach(page => page.classList.toggle("active", page.id === pageId));
@@ -692,6 +746,7 @@
     const active = document.querySelector(`.nav-item[data-page="${pageId}"]`);
     if (pageId === "pageSettings") loadOperationalSettings();
     if (pageId === "pageStock") loadStockPreparation();
+    if (pageId === "pageResume" && window.currentNahyezUser?.role === "OWNER") loadReportResume();
     $("activePageTitle").textContent = active ? active.textContent.trim() : "Dashboard";
     $("appSidebar").classList.remove("open");
   }
