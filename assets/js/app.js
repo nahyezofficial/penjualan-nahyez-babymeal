@@ -321,9 +321,12 @@
 
   function updateProductTotal() {
     let total = 0;
-    document.querySelectorAll(".product-entry").forEach(row => {
+    // Hanya baris produk penjualan. Baris stok awal/transfer tidak memiliki .sold-input.
+    document.querySelectorAll("#productEntryList .product-entry").forEach(row => {
+      const soldInput = row.querySelector(".sold-input");
+      if (!soldInput) return;
       const product = activeProducts.find(p => p.produkId === row.dataset.productId);
-      const sold = Math.max(0, Number(row.querySelector(".sold-input").value) || 0);
+      const sold = Math.max(0, Number(soldInput.value) || 0);
       total += sold * Number(product && product.hargaJual || 0);
     });
     $("productTotal").textContent = formatRupiah(total);

@@ -9,12 +9,27 @@
     const token = sessionStorage.getItem(TOKEN_KEY);
     if (token && options.auth !== false) headers.set("Authorization", `Bearer ${token}`);
 
-    const response = await fetch(`${base}${path}`, {
-      method: options.method || "GET",
-      headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-      cache: "no-store"
-    });
+    const controller = options.timeoutMs ? new AbortController() : null;
+    const timeoutId = controller
+      ? setTimeout(() => controller.abort(), options.timeoutMs)
+      : null;
+    let response;
+    try {
+      response = await fetch(`${base}${path}`, {
+        method: options.method || "GET",
+        headers,
+        body: options.body === undefined ? undefined : JSON.stringify(options.body),
+        cache: "no-store",
+        signal: controller ? controller.signal : undefined
+      });
+    } catch (error) {
+      if (error && error.name === "AbortError") {
+        throw new Error("Waktu tunggu pengiriman laporan habis. Periksa status laporan sebelum mencoba kirim ulang.");
+      }
+      throw error;
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
     let data;
     try { data = await response.json(); }
     catch { throw new Error("Respons server tidak dapat dibaca."); }
@@ -60,7 +75,10 @@
     getTransactionReference: outletId => request(`/api/transaksi/referensi${outletId ? `?outletId=${encodeURIComponent(outletId)}` : ""}`),
     addTransactionCustomer: data => request("/api/transaksi/pelanggan", {method:"POST",body:data}),
     previewIntegratedReport: data => request("/api/laporan/harian/terpadu/preview", { method:"POST", body:data }),
-    submitIntegratedReport: data => request("/api/laporan/harian/terpadu/submit", { method:"POST", body:data }),
+    // Beri waktu lebih panjang untuk proses simpan transaksi multi-sheet.
+    submitIntegratedReport: data => request("/api/laporan/harian/terpadu/submit", {
+      method:"POST", body:data, timeoutMs:60000
+    }),
     getReportDetails: laporanId => request(`/api/laporan/harian/detail?laporanId=${encodeURIComponent(laporanId)}`),
     saveReportDetails: (laporanId, daftarProduk) => request("/api/laporan/harian/detail", {
       method: "POST", body: { laporanId, daftarProduk }
