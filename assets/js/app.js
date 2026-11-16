@@ -695,7 +695,7 @@
     const start=(resumePage-1)*RESUME_PAGE_SIZE,visible=resumeData.slice(start,start+RESUME_PAGE_SIZE);
     body.innerHTML=visible.map(r=>{const status=String(r.statusLaporan||'DRAFT').toUpperCase();const cls=status==='FINAL'?'final':status==='MENUNGGU_PEMERIKSAAN'?'waiting':'';const action=`<button type="button" class="secondary-action owner-review-open" data-report-id="${escHtml(r.laporanId)}">${status==='MENUNGGU_PEMERIKSAAN'?'Periksa':'Lihat Detail'}</button>`;return `<tr><td>${escHtml(r.tanggal)}</td><td>${escHtml(r.outletId)}</td><td>${escHtml(r.laporanId)}</td><td><span class="resume-status ${cls}">${resumeStatusLabel(status)}</span></td><td>${formatRupiah(r.omzet)}</td><td>${formatRupiah(r.dailyFee)}</td><td>${action}</td></tr>`;}).join('');
     pager.innerHTML=total?`<span>Menampilkan ${start+1}–${Math.min(start+visible.length,total)} dari ${total} laporan</span><button type="button" data-resume-page="prev" ${resumePage===1?'disabled':''}>‹ Sebelumnya</button>${Array.from({length:pages},(_,i)=>i+1).filter(n=>n===1||n===pages||Math.abs(n-resumePage)<=1).map(n=>`<button type="button" data-resume-page="${n}" class="${n===resumePage?'active':''}">${n}</button>`).join('')}<button type="button" data-resume-page="next" ${resumePage===pages?'disabled':''}>Berikutnya ›</button>`:'';
-    const top=$('resumeScrollTop'),inner=$('resumeScrollTopInner'),bottom=$('resumeTableScroll'),table=bottom?.querySelector('table');if(top&&inner&&table){inner.style.width=`${table.scrollWidth}px`;top.scrollLeft=bottom.scrollLeft;}
+    syncResumeHorizontalNav();
   }
   let ownerCorrectionContext = null;
   async function loadReportResume(){
@@ -781,8 +781,19 @@
 
   $('resumeRows')?.addEventListener('click',e=>{const b=e.target.closest('.owner-review-open');if(b)openOwnerReportReview(b.dataset.reportId);});
   $('resumePagination')?.addEventListener('click',e=>{const b=e.target.closest('[data-resume-page]');if(!b)return;const v=b.dataset.resumePage;if(v==='prev')resumePage--;else if(v==='next')resumePage++;else resumePage=Number(v)||1;renderResumePage();});
-  $('resumeScrollTop')?.addEventListener('scroll',()=>{const bottom=$('resumeTableScroll');if(bottom)bottom.scrollLeft=$('resumeScrollTop').scrollLeft;});
-  $('resumeTableScroll')?.addEventListener('scroll',()=>{const top=$('resumeScrollTop');if(top)top.scrollLeft=$('resumeTableScroll').scrollLeft;});
+  function syncResumeHorizontalNav(){
+    const top=$('resumeScrollTop'),inner=$('resumeScrollTopInner'),bottom=$('resumeTableScroll'),table=bottom?.querySelector('table');
+    if(!top||!inner||!bottom||!table)return;
+    const width=Math.max(table.scrollWidth,table.getBoundingClientRect().width,bottom.clientWidth+2);
+    inner.style.width=`${width}px`;inner.style.minWidth=`${width}px`;top.scrollLeft=bottom.scrollLeft;
+    const max=bottom.scrollWidth-bottom.clientWidth;const left=$('resumeScrollLeft'),right=$('resumeScrollRight');
+    if(left)left.disabled=max<=1||bottom.scrollLeft<=1;if(right)right.disabled=max<=1||bottom.scrollLeft>=max-1;
+  }
+  $('resumeScrollTop')?.addEventListener('scroll',()=>{const bottom=$('resumeTableScroll');if(bottom){bottom.scrollLeft=$('resumeScrollTop').scrollLeft;syncResumeHorizontalNav();}});
+  $('resumeTableScroll')?.addEventListener('scroll',()=>{const top=$('resumeScrollTop');if(top)top.scrollLeft=$('resumeTableScroll').scrollLeft;syncResumeHorizontalNav();});
+  $('resumeScrollLeft')?.addEventListener('click',()=>{const el=$('resumeTableScroll');if(el)el.scrollBy({left:-Math.max(220,el.clientWidth*.75),behavior:'smooth'});});
+  $('resumeScrollRight')?.addEventListener('click',()=>{const el=$('resumeTableScroll');if(el)el.scrollBy({left:Math.max(220,el.clientWidth*.75),behavior:'smooth'});});
+  window.addEventListener('resize',syncResumeHorizontalNav);
   $('closeOwnerReview')?.addEventListener('click',()=>{$('ownerReviewDetail').classList.add('hidden');});
   $('approveOwnerReport')?.addEventListener('click',async()=>{
     const btn=$('approveOwnerReport'),id=btn.dataset.reportId;if(!id)return;
