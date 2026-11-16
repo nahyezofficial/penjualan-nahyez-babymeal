@@ -51,7 +51,7 @@
         STOK_TIDAK_CUKUP_OATMEAL: "Stok oatmeal tidak mencukupi. Periksa stok awal dan pengambilan stok.",
         STOK_TIDAK_CUKUP_ABON: "Stok abon tidak mencukupi. Periksa stok awal dan pengambilan stok."
       };
-      throw new Error(messages[data.error] || data.pesan || data.error || "Permintaan gagal.");
+      throw new Error(messages[data.error] || data.pesan || (data.detail ? `${data.error}: ${data.detail}` : data.error) || "Permintaan gagal.");
     }
     return data;
   }
@@ -70,6 +70,7 @@
     getOutletFuelSettings: () => request("/api/pengaturan/bensin-outlet"),
     saveOutletFuelSettings: daftarTarif => request("/api/pengaturan/bensin-outlet", { method: "POST", body: { daftarTarif } }),
     getRouteFuelSettings: () => request("/api/pengaturan/rute"),
+    getCustomers: outletId => request(`/api/pelanggan${outletId ? `?outletId=${encodeURIComponent(outletId)}` : ""}`),
     saveRouteFuelSettings: daftarTarif => request("/api/pengaturan/rute", { method: "POST", body: { daftarTarif } }),
     getProductPrices: outletId => request(`/api/produk-harga${outletId ? `?outletId=${encodeURIComponent(outletId)}` : ""}`),
     getTransactionReference: outletId => request(`/api/transaksi/referensi${outletId ? `?outletId=${encodeURIComponent(outletId)}` : ""}`),

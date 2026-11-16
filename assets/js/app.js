@@ -688,6 +688,15 @@
   $("saveStockPreparationButton").addEventListener("click",saveStockPreparation);
 
   function resumeStatusLabel(status){return status==='FINAL'?'Final':status==='MENUNGGU_PEMERIKSAAN'?'Menunggu Pemeriksaan':'Pengecekan Crew';}
+  let resumeData=[];let resumePage=1;const RESUME_PAGE_SIZE=10;
+  function renderResumePage(){
+    const body=$('resumeRows'),pager=$('resumePagination');if(!body||!pager)return;
+    const total=resumeData.length,pages=Math.max(1,Math.ceil(total/RESUME_PAGE_SIZE));resumePage=Math.min(Math.max(1,resumePage),pages);
+    const start=(resumePage-1)*RESUME_PAGE_SIZE,visible=resumeData.slice(start,start+RESUME_PAGE_SIZE);
+    body.innerHTML=visible.map(r=>{const status=String(r.statusLaporan||'DRAFT').toUpperCase();const cls=status==='FINAL'?'final':status==='MENUNGGU_PEMERIKSAAN'?'waiting':'';const action=`<button type="button" class="secondary-action owner-review-open" data-report-id="${escHtml(r.laporanId)}">${status==='MENUNGGU_PEMERIKSAAN'?'Periksa':'Lihat Detail'}</button>`;return `<tr><td>${escHtml(r.tanggal)}</td><td>${escHtml(r.outletId)}</td><td>${escHtml(r.laporanId)}</td><td><span class="resume-status ${cls}">${resumeStatusLabel(status)}</span></td><td>${formatRupiah(r.omzet)}</td><td>${formatRupiah(r.dailyFee)}</td><td>${action}</td></tr>`;}).join('');
+    pager.innerHTML=total?`<span>Menampilkan ${start+1}–${Math.min(start+visible.length,total)} dari ${total} laporan</span><button type="button" data-resume-page="prev" ${resumePage===1?'disabled':''}>‹ Sebelumnya</button>${Array.from({length:pages},(_,i)=>i+1).filter(n=>n===1||n===pages||Math.abs(n-resumePage)<=1).map(n=>`<button type="button" data-resume-page="${n}" class="${n===resumePage?'active':''}">${n}</button>`).join('')}<button type="button" data-resume-page="next" ${resumePage===pages?'disabled':''}>Berikutnya ›</button>`:'';
+    const top=$('resumeScrollTop'),inner=$('resumeScrollTopInner'),bottom=$('resumeTableScroll'),table=bottom?.querySelector('table');if(top&&inner&&table){inner.style.width=`${table.scrollWidth}px`;top.scrollLeft=bottom.scrollLeft;}
+  }
   let ownerCorrectionContext = null;
   async function loadReportResume(){
     const message=$('resumeStatusMessage'), body=$('resumeRows');
@@ -698,10 +707,10 @@
       const filters={dariTanggal:$('resumeFrom').value,sampaiTanggal:$('resumeTo').value,status:$('resumeStatus').value};
       Object.keys(filters).forEach(k=>{if(!filters[k])delete filters[k];});
       const result=await NahyezAPI.getReportResume(filters);
-      const rows=Array.isArray(result.laporan)?result.laporan:[];
-      if(!rows.length){body.innerHTML='<tr><td colspan="7">Belum ada laporan sesuai filter.</td></tr>';message.textContent='Tidak ada laporan yang ditemukan.';message.className='report-status warning';return;}
-      body.innerHTML=rows.map(r=>{const status=String(r.statusLaporan||'DRAFT').toUpperCase();const cls=status==='FINAL'?'final':status==='MENUNGGU_PEMERIKSAAN'?'waiting':'';const action=`<button type="button" class="secondary-action owner-review-open" data-report-id="${escHtml(r.laporanId)}">${status==='MENUNGGU_PEMERIKSAAN'?'Periksa':'Lihat Detail'}</button>`;return `<tr><td>${escHtml(r.tanggal)}</td><td>${escHtml(r.outletId)}</td><td>${escHtml(r.laporanId)}</td><td><span class="resume-status ${cls}">${resumeStatusLabel(status)}</span></td><td>${formatRupiah(r.omzet)}</td><td>${formatRupiah(r.dailyFee)}</td><td>${action}</td></tr>`;}).join('');
-      message.textContent=`${rows.length} laporan ditemukan. Pilih Periksa untuk membuka rincian laporan.`;message.className='report-status success';
+      const rows=Array.isArray(result.laporan)?result.laporan:[];resumeData=rows;resumePage=1;
+      if(!rows.length){body.innerHTML='<tr><td colspan="7">Belum ada laporan sesuai filter.</td></tr>';if($('resumePagination'))$('resumePagination').innerHTML='';message.textContent='Tidak ada laporan yang ditemukan.';message.className='report-status warning';return;}
+      renderResumePage();
+      message.textContent=`${rows.length} laporan ditemukan. Ditampilkan maksimal 10 laporan per halaman.`;message.className='report-status success';
 
     }catch(e){body.innerHTML='<tr><td colspan="7">Gagal memuat laporan.</td></tr>';message.textContent=e.message||'Gagal mengambil resume laporan.';message.className='report-status error';}
   }
@@ -738,19 +747,28 @@
     panel.innerHTML=`<h3>Perbaiki Laporan</h3><p class="owner-correction-hint">Koreksi hanya berlaku untuk laporan hari ini yang berstatus Menunggu Pemeriksaan. Pastikan seluruh rincian benar sebelum menyimpan.</p>
       <h4>Produk Terjual / Gratis</h4><div class="owner-correction-row"><label><b>Produk</b></label><b>Terjual</b><b>Gratis</b></div>${productRows||'<p class="owner-correction-hint">Tidak ada rincian produk.</p>'}
       <h4>Pembayaran</h4><div class="owner-correction-grid"><label class="owner-correction-field">QRIS (Rp)<input id="corrQris" type="number" min="0" step="1" value="${Number((r.payments||[]).find(x=>String(x.JenisPembayaran).toUpperCase()==='QRIS')?.Nominal)||0}"></label><label class="owner-correction-field">Transfer (Rp)<input id="corrTransferPayment" type="number" min="0" step="1" value="${Number((r.payments||[]).find(x=>String(x.JenisPembayaran).toUpperCase()==='TRANSFER')?.Nominal)||0}"></label></div>
-      <h4>Piutang Baru</h4>${debts||'<p class="owner-correction-hint">Tidak ada piutang pada laporan ini.</p>'}<h4>Pembayaran Piutang</h4>${paid||'<p class="owner-correction-hint">Tidak ada pembayaran piutang pada laporan ini.</p>'}
+      <h4>Piutang Baru</h4><div id="corrExistingDebts">${debts||'<p class="owner-correction-hint">Belum ada piutang pada laporan ini.</p>'}</div><div id="corrDebtExtraRows"></div><button type="button" class="secondary-action" id="corrAddDebt">+ Tambah Pelanggan Berutang</button><h4>Pembayaran Piutang</h4><div id="corrExistingPaid">${paid||'<p class="owner-correction-hint">Belum ada pembayaran piutang pada laporan ini.</p>'}</div><div id="corrPaidExtraRows"></div><button type="button" class="secondary-action" id="corrAddPaid">+ Tambah Pembayaran Pelanggan</button>
       <h4>Transfer Stok</h4><div id="corrTransferHint" class="owner-correction-hint">${(r.transfers||[]).length?'Ubah jumlah cup transfer pada setiap produk. Rute asal/tujuan tetap.':'Tidak ada transfer stok pada laporan ini.'}</div>${transferRows}
       <label class="owner-correction-field">Catatan Crew<textarea id="corrNote" rows="2" maxlength="500">${escHtml(report.Catatan||'')}</textarea></label>
       <label class="owner-correction-field">Alasan Koreksi Owner *<textarea id="corrReason" rows="2" maxlength="1000" placeholder="Contoh: jumlah penjualan Bubur Ayam salah input"></textarea></label>
       <div class="owner-correction-actions"><button type="button" class="secondary-action" id="corrPreviewButton">Hitung Ulang / Preview</button><button type="button" class="report-action" id="corrSaveButton" disabled><span>Simpan Koreksi</span><b>→</b></button></div><div id="corrResult" class="owner-correction-result" aria-live="polite">Lakukan preview sebelum menyimpan.</div>`;
     panel.classList.remove('hidden');
+    let correctionCustomers=[];
+    const ensureCorrectionCustomers=async()=>{if(correctionCustomers.length)return correctionCustomers;const settings=await NahyezAPI.getCustomers(r.outletId||r.report?.OutletID);correctionCustomers=Array.isArray(settings.pelanggan)?settings.pelanggan:[];if(!correctionCustomers.length)throw new Error('Belum ada pelanggan aktif pada outlet ini. Tambahkan pelanggan terlebih dahulu.');return correctionCustomers;};
+    const customerSelectHtml=(attr)=>`<select ${attr} required><option value="">Pilih pelanggan...</option>${correctionCustomers.map(c=>`<option value="${escHtml(c.pelangganId)}">${escHtml(c.namaPelanggan)} · ${escHtml(c.pelangganId)}</option>`).join('')}</select>`;
+    const addCustomerAmountRow=async(kind)=>{await ensureCorrectionCustomers();const target=$(kind==='debt'?'corrDebtExtraRows':'corrPaidExtraRows');const row=document.createElement('div');row.className='owner-correction-row owner-correction-customer-row';row.innerHTML=`${customerSelectHtml(`data-corr-new-${kind}-customer`)}<input type="number" min="0" step="1" value="0" data-corr-new-${kind}-amount aria-label="Nominal ${kind==='debt'?'piutang':'pembayaran'}"><button type="button" class="secondary-action" data-corr-remove-row>Hapus</button>`;target.appendChild(row);};
+    $('corrAddDebt')?.addEventListener('click',async()=>{try{await addCustomerAmountRow('debt');}catch(e){$('corrResult').textContent=e.message;}});
+    $('corrAddPaid')?.addEventListener('click',async()=>{try{await addCustomerAmountRow('paid');}catch(e){$('corrResult').textContent=e.message;}});
+    panel.addEventListener('click',e=>{const b=e.target.closest('[data-corr-remove-row]');if(b)b.closest('.owner-correction-customer-row')?.remove();});
     const getPayload=async()=>{
       const daftarProduk=details.map(x=>({produkId:x.produkId,jumlahTerjual:Number(panel.querySelector(`[data-corr-sold="${CSS.escape(x.produkId)}"]`)?.value||0),jumlahGratis:Number(panel.querySelector(`[data-corr-free="${CSS.escape(x.produkId)}"]`)?.value||0)}));
       const daftarPiutang=(r.debts||[]).map(x=>({pelangganId:x.PelangganID,nominal:Number(panel.querySelector(`[data-corr-debt="${CSS.escape(x.PelangganID)}"]`)?.value||0)}));
+      panel.querySelectorAll('[data-corr-new-debt-customer]').forEach(row=>{const id=row.value,amount=Number(row.closest('.owner-correction-customer-row')?.querySelector('[data-corr-new-debt-amount]')?.value||0);if(id&&amount>0)daftarPiutang.push({pelangganId:id,nominal:amount});});
       const daftarPembayaranPiutang=(r.debtPayments||[]).map(x=>({pelangganId:x.PelangganID,nominal:Number(panel.querySelector(`[data-corr-paid="${CSS.escape(x.PelangganID)}"]`)?.value||0)}));
+      panel.querySelectorAll('[data-corr-new-paid-customer]').forEach(row=>{const id=row.value,amount=Number(row.closest('.owner-correction-customer-row')?.querySelector('[data-corr-new-paid-amount]')?.value||0);if(id&&amount>0)daftarPembayaranPiutang.push({pelangganId:id,nominal:amount});});
       let daftarTransfer=[];
       if((r.transfers||[]).length){
-        const routeRes=await NahyezAPI.getRouteFuelSettings();const routes=routeRes.daftarTarif||[];
+        const routeRes=await NahyezAPI.getRouteFuelSettings();const routes=routeRes.rute||routeRes.daftarTarif||[];
         for(const t of r.transfers){const route=routes.find(x=>x.outletAsal===t.OutletAsal&&x.outletTujuan===t.OutletTujuan);if(!route)throw new Error('Rute transfer lama tidak dapat dipetakan. Koreksi transfer perlu dilakukan setelah data rute diperiksa.');const items=(r.transferDetails||[]).filter(x=>x.TransferID===t.TransferID).map(x=>({produkId:x.ProdukID,jumlahCup:Number(panel.querySelector(`[data-corr-transfer-qty="${CSS.escape(t.TransferID+'::'+x.ProdukID)}"]`)?.value||0)})).filter(x=>x.jumlahCup>0);if((r.transferDetails||[]).some(x=>x.TransferID===t.TransferID&&!x.ProdukID))throw new Error('Detail produk transfer lama tidak lengkap. Koreksi belum dapat disimpan dengan aman.');if(items.length)daftarTransfer.push({pengaturanRuteId:route.pengaturanRuteId,daftarProduk:items});}
       }
       return {laporanId:r.laporanId,daftarProduk,qris:Number($('corrQris').value||0),transferPembayaran:Number($('corrTransferPayment').value||0),daftarPiutang,daftarPembayaranPiutang,daftarTransfer,catatan:$('corrNote').value||''};
@@ -762,6 +780,9 @@
   $('ownerCorrectionToggle')?.addEventListener('click',()=>{if(ownerCorrectionContext)renderOwnerCorrectionEditor(ownerCorrectionContext);});
 
   $('resumeRows')?.addEventListener('click',e=>{const b=e.target.closest('.owner-review-open');if(b)openOwnerReportReview(b.dataset.reportId);});
+  $('resumePagination')?.addEventListener('click',e=>{const b=e.target.closest('[data-resume-page]');if(!b)return;const v=b.dataset.resumePage;if(v==='prev')resumePage--;else if(v==='next')resumePage++;else resumePage=Number(v)||1;renderResumePage();});
+  $('resumeScrollTop')?.addEventListener('scroll',()=>{const bottom=$('resumeTableScroll');if(bottom)bottom.scrollLeft=$('resumeScrollTop').scrollLeft;});
+  $('resumeTableScroll')?.addEventListener('scroll',()=>{const top=$('resumeScrollTop');if(top)top.scrollLeft=$('resumeTableScroll').scrollLeft;});
   $('closeOwnerReview')?.addEventListener('click',()=>{$('ownerReviewDetail').classList.add('hidden');});
   $('approveOwnerReport')?.addEventListener('click',async()=>{
     const btn=$('approveOwnerReport'),id=btn.dataset.reportId;if(!id)return;
