@@ -688,6 +688,7 @@
   $("saveStockPreparationButton").addEventListener("click",saveStockPreparation);
 
   function resumeStatusLabel(status){return status==='FINAL'?'Final':status==='MENUNGGU_PEMERIKSAAN'?'Menunggu Pemeriksaan':'Pengecekan Crew';}
+  let ownerCorrectionContext = null;
   async function loadReportResume(){
     const message=$('resumeStatusMessage'), body=$('resumeRows');
     if(!message||!body||window.currentNahyezUser?.role!=='OWNER')return;
@@ -708,7 +709,7 @@
     const panel=$('ownerReviewDetail'),body=$('ownerReviewBody'),statusBox=$('ownerReviewStatus'),approve=$('approveOwnerReport');
     panel.classList.remove('hidden');body.innerHTML='<div class="report-status">Memuat rincian laporan...</div>';statusBox.textContent='';approve.disabled=true;panel.scrollIntoView({behavior:'smooth',block:'start'});
     try{
-      const r=await NahyezAPI.getReportDetails(laporanId);const h=r.report||{};const state=String(r.statusLaporan||'').toUpperCase();
+      const r=await NahyezAPI.getReportDetails(laporanId);ownerCorrectionContext=r;const h=r.report||{};const state=String(r.statusLaporan||'').toUpperCase();
       $('ownerReviewHeading').textContent=`Pemeriksaan ${h.NamaOutlet||r.outletId||'Laporan'}`;$('ownerReviewMeta').textContent=`${h.Tanggal||h.TanggalLaporan||''} · ${laporanId} · ${resumeStatusLabel(state)}`;
       const rows=(r.detail||[]).map(x=>`<tr><td>${escHtml(x.namaProduk)}</td><td>${x.jumlahTerjual}</td><td>${x.jumlahGratis}</td><td>${formatRupiah(x.subtotal)}</td></tr>`).join('')||'<tr><td colspan="4">Tidak ada rincian produk.</td></tr>';
       const payments=(r.payments||[]).map(x=>`<tr><td>${escHtml(x.JenisPembayaran)}</td><td>${formatRupiah(x.Nominal)}</td></tr>`).join('')||'<tr><td colspan="2">Tidak ada pembayaran non-tunai.</td></tr>';
@@ -724,10 +725,42 @@
       <h4>Pembayaran Piutang</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Pelanggan ID</th><th>Nominal</th></tr></thead><tbody>${paid}</tbody></table></div>
       <h4>Pengambilan Stok</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Rute</th><th>Jumlah Cup</th><th>Tarif Bensin</th></tr></thead><tbody>${transfers}</tbody></table></div>
       <div class="report-status">Catatan Crew: ${escHtml(h.Catatan||'—')}</div>`;
-      approve.dataset.reportId=laporanId;approve.classList.toggle('hidden',state!=='MENUNGGU_PEMERIKSAAN');approve.disabled=state!=='MENUNGGU_PEMERIKSAAN';
+      approve.dataset.reportId=laporanId;approve.classList.toggle('hidden',state!=='MENUNGGU_PEMERIKSAAN');approve.disabled=state!=='MENUNGGU_PEMERIKSAAN';const correctionToggle=$('ownerCorrectionToggle');if(correctionToggle){correctionToggle.classList.toggle('hidden',state!=='MENUNGGU_PEMERIKSAAN');correctionToggle.dataset.reportId=laporanId;}const correctionPanel=$('ownerCorrectionPanel');if(correctionPanel){correctionPanel.classList.add('hidden');correctionPanel.innerHTML='';}
       statusBox.textContent=state==='MENUNGGU_PEMERIKSAAN'?'Periksa seluruh data. Persetujuan akan mengunci laporan menjadi FINAL.':'Laporan ini bukan antrean persetujuan aktif; hanya dapat dilihat.';statusBox.className='report-status '+(state==='MENUNGGU_PEMERIKSAAN'?'success':'warning');
     }catch(e){body.innerHTML='<div class="report-status error">Gagal memuat detail laporan.</div>';statusBox.textContent=e.message||'Terjadi kesalahan.';statusBox.className='report-status error';}
   }
+  function renderOwnerCorrectionEditor(r){
+    const panel=$('ownerCorrectionPanel'),report=r.report||{},details=r.detail||[];
+    const productRows=details.map(x=>`<div class="owner-correction-row"><label>${escHtml(x.namaProduk)}</label><input type="number" min="0" step="1" data-corr-sold="${escHtml(x.produkId)}" value="${Number(x.jumlahTerjual)||0}" aria-label="Jumlah terjual ${escHtml(x.namaProduk)}"><input type="number" min="0" step="1" data-corr-free="${escHtml(x.produkId)}" value="${Number(x.jumlahGratis)||0}" aria-label="Jumlah gratis ${escHtml(x.namaProduk)}"></div>`).join('');
+    const debts=(r.debts||[]).map(x=>`<div class="owner-correction-row"><label>${escHtml(x.NamaPelanggan||x.PelangganID)} · ${escHtml(x.PelangganID)}</label><input type="number" min="0" step="1" data-corr-debt="${escHtml(x.PelangganID)}" value="${Number(x.NominalUtang)||0}" aria-label="Piutang ${escHtml(x.PelangganID)}"><span class="owner-correction-hint">Piutang</span></div>`).join('');
+    const paid=(r.debtPayments||[]).map(x=>`<div class="owner-correction-row"><label>${escHtml(x.PelangganID)}</label><input type="number" min="0" step="1" data-corr-paid="${escHtml(x.PelangganID)}" value="${Number(x.NominalPembayaran)||0}" aria-label="Pembayaran piutang ${escHtml(x.PelangganID)}"><span class="owner-correction-hint">Pembayaran</span></div>`).join('');
+    const transferRows=(r.transfers||[]).map(t=>{const items=(r.transferDetails||[]).filter(x=>x.TransferID===t.TransferID);return `<div class="owner-correction-transfer"><p><b>${escHtml(t.OutletAsal)} → ${escHtml(t.OutletTujuan)}</b></p>${items.map(x=>`<div class="owner-correction-row"><label>${escHtml(x.NamaProduk)}</label><input type="number" min="0" step="1" data-corr-transfer-qty="${escHtml(t.TransferID+'::'+x.ProdukID)}" value="${Number(x.JumlahCup)||0}" aria-label="Jumlah transfer ${escHtml(x.NamaProduk)}"><span class="owner-correction-hint">Cup</span></div>`).join('')||'<p class="owner-correction-hint">Detail transfer tidak tersedia.</p>'}</div>`;}).join('');
+    panel.innerHTML=`<h3>Perbaiki Laporan</h3><p class="owner-correction-hint">Koreksi hanya berlaku untuk laporan hari ini yang berstatus Menunggu Pemeriksaan. Pastikan seluruh rincian benar sebelum menyimpan.</p>
+      <h4>Produk Terjual / Gratis</h4><div class="owner-correction-row"><label><b>Produk</b></label><b>Terjual</b><b>Gratis</b></div>${productRows||'<p class="owner-correction-hint">Tidak ada rincian produk.</p>'}
+      <h4>Pembayaran</h4><div class="owner-correction-grid"><label class="owner-correction-field">QRIS (Rp)<input id="corrQris" type="number" min="0" step="1" value="${Number((r.payments||[]).find(x=>String(x.JenisPembayaran).toUpperCase()==='QRIS')?.Nominal)||0}"></label><label class="owner-correction-field">Transfer (Rp)<input id="corrTransferPayment" type="number" min="0" step="1" value="${Number((r.payments||[]).find(x=>String(x.JenisPembayaran).toUpperCase()==='TRANSFER')?.Nominal)||0}"></label></div>
+      <h4>Piutang Baru</h4>${debts||'<p class="owner-correction-hint">Tidak ada piutang pada laporan ini.</p>'}<h4>Pembayaran Piutang</h4>${paid||'<p class="owner-correction-hint">Tidak ada pembayaran piutang pada laporan ini.</p>'}
+      <h4>Transfer Stok</h4><div id="corrTransferHint" class="owner-correction-hint">${(r.transfers||[]).length?'Ubah jumlah cup transfer pada setiap produk. Rute asal/tujuan tetap.':'Tidak ada transfer stok pada laporan ini.'}</div>${transferRows}
+      <label class="owner-correction-field">Catatan Crew<textarea id="corrNote" rows="2" maxlength="500">${escHtml(report.Catatan||'')}</textarea></label>
+      <label class="owner-correction-field">Alasan Koreksi Owner *<textarea id="corrReason" rows="2" maxlength="1000" placeholder="Contoh: jumlah penjualan Bubur Ayam salah input"></textarea></label>
+      <div class="owner-correction-actions"><button type="button" class="secondary-action" id="corrPreviewButton">Hitung Ulang / Preview</button><button type="button" class="report-action" id="corrSaveButton" disabled><span>Simpan Koreksi</span><b>→</b></button></div><div id="corrResult" class="owner-correction-result" aria-live="polite">Lakukan preview sebelum menyimpan.</div>`;
+    panel.classList.remove('hidden');
+    const getPayload=async()=>{
+      const daftarProduk=details.map(x=>({produkId:x.produkId,jumlahTerjual:Number(panel.querySelector(`[data-corr-sold="${CSS.escape(x.produkId)}"]`)?.value||0),jumlahGratis:Number(panel.querySelector(`[data-corr-free="${CSS.escape(x.produkId)}"]`)?.value||0)}));
+      const daftarPiutang=(r.debts||[]).map(x=>({pelangganId:x.PelangganID,nominal:Number(panel.querySelector(`[data-corr-debt="${CSS.escape(x.PelangganID)}"]`)?.value||0)}));
+      const daftarPembayaranPiutang=(r.debtPayments||[]).map(x=>({pelangganId:x.PelangganID,nominal:Number(panel.querySelector(`[data-corr-paid="${CSS.escape(x.PelangganID)}"]`)?.value||0)}));
+      let daftarTransfer=[];
+      if((r.transfers||[]).length){
+        const routeRes=await NahyezAPI.getRouteFuelSettings();const routes=routeRes.daftarTarif||[];
+        for(const t of r.transfers){const route=routes.find(x=>x.outletAsal===t.OutletAsal&&x.outletTujuan===t.OutletTujuan);if(!route)throw new Error('Rute transfer lama tidak dapat dipetakan. Koreksi transfer perlu dilakukan setelah data rute diperiksa.');const items=(r.transferDetails||[]).filter(x=>x.TransferID===t.TransferID).map(x=>({produkId:x.ProdukID,jumlahCup:Number(panel.querySelector(`[data-corr-transfer-qty="${CSS.escape(t.TransferID+'::'+x.ProdukID)}"]`)?.value||0)})).filter(x=>x.jumlahCup>0);if((r.transferDetails||[]).some(x=>x.TransferID===t.TransferID&&!x.ProdukID))throw new Error('Detail produk transfer lama tidak lengkap. Koreksi belum dapat disimpan dengan aman.');if(items.length)daftarTransfer.push({pengaturanRuteId:route.pengaturanRuteId,daftarProduk:items});}
+      }
+      return {laporanId:r.laporanId,daftarProduk,qris:Number($('corrQris').value||0),transferPembayaran:Number($('corrTransferPayment').value||0),daftarPiutang,daftarPembayaranPiutang,daftarTransfer,catatan:$('corrNote').value||''};
+    };
+    let previewPassed=false;
+    $('corrPreviewButton').addEventListener('click',async()=>{const btn=$('corrPreviewButton'),result=$('corrResult'),save=$('corrSaveButton');btn.disabled=true;save.disabled=true;previewPassed=false;result.className='owner-correction-result';result.textContent='Menghitung ulang laporan...';try{const payload=await getPayload();const preview=await NahyezAPI.previewOwnerCorrection(payload);previewPassed=true;result.textContent=`Preview berhasil · Omzet ${formatRupiah(preview.omzet)} · Daily Fee ${formatRupiah(preview.dailyFee)} · Setoran tunai ${formatRupiah(preview.cash)}. Sisa stok sudah dihitung ulang.`;save.disabled=false;}catch(e){result.className='owner-correction-result error';result.textContent=e.message||'Preview koreksi gagal.';}finally{btn.disabled=false;}});
+    $('corrSaveButton').addEventListener('click',async()=>{const btn=$('corrSaveButton'),reason=$('corrReason').value.trim(),result=$('corrResult');if(!previewPassed){result.textContent='Lakukan preview ulang sebelum menyimpan.';return;}if(!reason){result.className='owner-correction-result error';result.textContent='Alasan koreksi wajib diisi.';return;}if(!window.confirm('Simpan koreksi ini? Laporan akan tetap berstatus Menunggu Pemeriksaan.'))return;btn.disabled=true;result.textContent='Menyimpan koreksi...';try{const payload=await getPayload();payload.alasanKoreksi=reason;const saved=await NahyezAPI.saveOwnerCorrection(payload);result.className='owner-correction-result';result.textContent=saved.pesan||'Koreksi berhasil disimpan.';await loadReportResume();await openOwnerReportReview(r.laporanId);}catch(e){result.className='owner-correction-result error';result.textContent=e.message||'Koreksi gagal disimpan.';btn.disabled=false;}});
+  }
+  $('ownerCorrectionToggle')?.addEventListener('click',()=>{if(ownerCorrectionContext)renderOwnerCorrectionEditor(ownerCorrectionContext);});
+
   $('resumeRows')?.addEventListener('click',e=>{const b=e.target.closest('.owner-review-open');if(b)openOwnerReportReview(b.dataset.reportId);});
   $('closeOwnerReview')?.addEventListener('click',()=>{$('ownerReviewDetail').classList.add('hidden');});
   $('approveOwnerReport')?.addEventListener('click',async()=>{

@@ -75,6 +75,8 @@
     getTransactionReference: outletId => request(`/api/transaksi/referensi${outletId ? `?outletId=${encodeURIComponent(outletId)}` : ""}`),
     addTransactionCustomer: data => request("/api/transaksi/pelanggan", {method:"POST",body:data}),
     previewIntegratedReport: data => request("/api/laporan/harian/terpadu/preview", { method:"POST", body:data }),
+    previewOwnerCorrection: data => request("/api/laporan/owner/correction/preview", { method:"POST", body:data, timeoutMs:30000 }),
+    saveOwnerCorrection: data => request("/api/laporan/owner/correction/save", { method:"POST", body:data, timeoutMs:60000 }),
     // Beri waktu lebih panjang untuk proses simpan transaksi multi-sheet.
     submitIntegratedReport: data => request("/api/laporan/harian/terpadu/submit", {
       method:"POST", body:data, timeoutMs:60000
