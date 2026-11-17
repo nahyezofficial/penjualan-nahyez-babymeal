@@ -1,5 +1,18 @@
 (() => {
   const $ = id => document.getElementById(id);
+  // Terapkan perilaku angka nol pada seluruh input numerik, termasuk baris dinamis.
+  document.addEventListener("focusin", event => {
+    const input = event.target;
+    if (input instanceof HTMLInputElement && input.type === "number" && input.value === "0" && !input.disabled && !input.readOnly) input.value = "";
+  });
+  document.addEventListener("focusout", event => {
+    const input = event.target;
+    if (input instanceof HTMLInputElement && input.type === "number" && input.value.trim() === "") {
+      input.value = "0";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  });
   const loginView = $("loginView"), dashboardView = $("dashboardView");
   const ownerForm = $("ownerForm"), staffForm = $("staffForm");
   let activeMode = "owner", stream = null, scanTimer = null, scanBusy = false;
@@ -52,6 +65,7 @@
       ? (user.username || "owner")
       : (user.idKaryawan || user.id || "—");
     $("profileOutlet").textContent = user.role === "OWNER" ? "Semua Outlet" : (user.outletNama || "—");
+    $("crewOpeningStockCard").classList.toggle("hidden", user.role !== "KARYAWAN");
     $("ownerReportPanel").classList.toggle("hidden", user.role !== "OWNER");
     $("crewComingCard").classList.add("hidden");
     document.querySelectorAll(".nav-item[data-page=\"pageSettings\"]").forEach(el => el.classList.toggle("hidden", user.role !== "OWNER"));
@@ -62,7 +76,7 @@
     document.querySelectorAll(".nav-item[data-page=\"pageStock\"]").forEach(el => el.classList.toggle("hidden", user.role !== "OWNER"));
     $("pageStock").classList.toggle("hidden", user.role !== "OWNER");
     if (user.role === "OWNER") loadOwnerOutlets();
-    else initializeCrewWorkspace();
+    else { initializeCrewWorkspace(); loadCrewOpeningStock(); }
   }
 
   let ownerOutletList = [];
@@ -199,6 +213,32 @@
     const box = $("workspaceStatus");
     box.textContent = message;
     box.className = `report-status ${type}`.trim();
+  }
+
+  async function loadCrewOpeningStock() {
+    const card = $("crewOpeningStockCard");
+    if (!card) return;
+    card.classList.remove("hidden");
+    $("crewOpeningStockMeta").textContent = "Memuat stok awal outlet hari ini...";
+    try {
+      const result = await NahyezAPI.getCrewOpeningStock();
+      const items = Array.isArray(result.stok) ? result.stok : [];
+      $("crewOpeningStockMeta").textContent = result.tanggal ? `Tanggal ${result.tanggal} · ${(window.currentNahyezUser||{}).outletNama||"Outlet Crew"}` : "Persediaan hari ini";
+      const host = $("crewOpeningStockGrid"); host.replaceChildren();
+      if (!result.tersimpan || !items.length) {
+        host.innerHTML = '<div class="crew-opening-stock-empty">Stok awal hari ini belum diinput Owner.</div>';
+        return;
+      }
+      items.forEach(item => {
+        const el = document.createElement("div"); el.className = "crew-opening-stock-item";
+        const label = document.createElement("span"); label.textContent = item.namaProduk || item.produkId || "Produk";
+        const value = document.createElement("strong"); value.textContent = `${Number(item.jumlahStokAwal)||0} ${item.satuanStok||""}`.trim();
+        el.append(label,value); host.appendChild(el);
+      });
+    } catch (error) {
+      $("crewOpeningStockMeta").textContent = "Stok awal belum dapat dimuat.";
+      $("crewOpeningStockGrid").innerHTML = '<div class="crew-opening-stock-empty">Data stok awal sementara tidak tersedia.</div>';
+    }
   }
 
   async function initializeCrewWorkspace() {
