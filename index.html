@@ -65,6 +65,7 @@
           <button class="nav-item" data-page="pageStock"><span>▦</span>Input Stok Awal &amp; Modal Kembalian</button>
           <button class="nav-item" data-page="pageInput"><span>＋</span>Input Laporan</button>
           <button class="nav-item" data-page="pageResume"><span>▤</span>Resume Laporan</button>
+          <button class="nav-item" data-page="pageDebtResume"><span>Rp</span>Resume Piutang Pelanggan</button>
           <button class="nav-item" data-page="pageSettings"><span>⚙</span>Pengaturan</button>
           <div class="sidebar-note">NAHYEZ BABY MEAL<br><small>PORTAL PENJUALAN</small></div>
         </aside>
@@ -156,7 +157,22 @@
                 <div class="review-actions"><button id="ownerCorrectionToggle" class="secondary-action hidden" type="button">Perbaiki Laporan</button><button id="approveOwnerReport" class="report-action" type="button"><span>Setujui Laporan &amp; Jadikan FINAL</span><b>→</b></button></div><div id="ownerCorrectionPanel" class="owner-correction-panel hidden"></div>
               </section>
             </section></section>
+          <section class="app-page" id="pageDebtResume">
+            <section class="report-panel">
+              <div class="section-heading"><div><p class="section-kicker">PIUTANG PELANGGAN</p><h3>Resume Piutang Pelanggan</h3><p>Daftar pelanggan yang masih memiliki saldo hutang.</p></div><span class="section-icon">Rp</span></div>
+              <div class="resume-filters"><button id="reloadDebtResume" class="secondary-action" type="button">Muat Ulang</button><div id="debtResumeSummary" class="report-status" aria-live="polite">Memuat daftar piutang...</div></div>
+              <div class="review-table-wrap"><table class="review-table"><thead><tr><th>Nama Pelanggan</th><th>Pelanggan ID</th><th>Outlet</th><th>Total Hutang</th><th>Aksi</th></tr></thead><tbody id="debtResumeRows"><tr><td colspan="5">Memuat...</td></tr></tbody></table></div>
+              <section id="debtCustomerDetail" class="owner-review-detail hidden" aria-live="polite"><div class="settings-subhead"><div><p class="section-kicker">RINCIAN PELANGGAN</p><h4 id="debtDetailHeading">Detail Hutang</h4><p id="debtDetailMeta"></p></div><div class="button-cluster"><button id="printDebtDetail" class="secondary-action" type="button">Cetak Rincian</button><button id="closeDebtDetail" class="secondary-action" type="button">Tutup</button></div></div><div id="debtDetailBody"></div></section>
+            </section>
+          </section>
           <section class="app-page" id="pageSettings">
+            <section class="report-panel">
+              <div class="section-heading"><div><p class="section-kicker">KONFIGURASI OUTLET</p><h3>Pengaturan Daily Fee</h3><p>Aktifkan atau nonaktifkan perhitungan Daily Fee untuk setiap outlet. Default outlet yang belum diatur tetap Aktif.</p></div><span class="section-icon">⚙</span></div>
+              <div class="settings-subhead"><div><h4>Status Daily Fee per Outlet</h4><p>Jika nonaktif, Daily Fee tidak dihitung, tidak disimpan, dan tidak mengurangi setoran tunai.</p></div><button id="reloadDailyFeeOutlet" class="secondary-action" type="button">Muat Ulang</button></div>
+              <div id="dailyFeeOutletList" class="settings-list"><div class="report-status">Memuat pengaturan...</div></div>
+              <div id="dailyFeeOutletStatus" class="report-status" aria-live="polite"></div>
+              <button id="saveDailyFeeOutletButton" class="report-action" type="button"><span>Simpan Pengaturan Daily Fee</span><b>→</b></button>
+            </section>
             <section class="report-panel">
               <div class="section-heading"><div><p class="section-kicker">KONFIGURASI OWNER</p><h3>Tarif Operasional</h3><p>Kelola tarif bensin outlet dan enam rute transfer. Perubahan berlaku untuk transaksi berikutnya.</p></div><span class="section-icon">⚙</span></div>
               <div class="settings-subhead"><div><h4>Tarif Bensin Outlet</h4><p>Nominal dalam Rupiah per hari untuk masing-masing outlet.</p></div><button type="button" class="secondary-action" id="reloadFuelSettings">Muat Ulang</button></div>

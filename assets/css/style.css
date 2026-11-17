@@ -254,3 +254,27 @@ body{
   .crew-opening-stock-item strong{font-size:12px}
 }
 @media(max-width:360px){.info-card{padding:9px 7px}.info-card strong{font-size:10px}.card-label{font-size:7px}}
+
+/* RC4.1.5 — Resume Piutang & konfigurasi Daily Fee per outlet */
+.daily-fee-toggle{display:flex!important;align-items:center;justify-content:flex-end;gap:9px;color:var(--ink)!important;font-size:12px!important;font-weight:700!important;cursor:pointer}
+.daily-fee-toggle input{width:20px!important;height:20px!important;margin:0!important;accent-color:#d95f91;cursor:pointer}
+.daily-fee-toggle span{white-space:nowrap}
+#debtCustomerDetail{margin-top:20px}
+#debtCustomerDetail h4{margin:20px 0 9px;color:var(--ink);font:700 14px Manrope,sans-serif}
+#debtDetailBody .review-summary-grid{margin:14px 0}
+#debtDetailBody .review-table-wrap{margin-bottom:14px}
+@media(max-width:560px){.daily-fee-outlet-row{grid-template-columns:minmax(0,1fr) auto!important;align-items:center}.daily-fee-toggle{justify-content:flex-start}}
+@media print{
+  body{background:#fff!important;color:#111!important}
+  .ambient,.dash-header,.app-sidebar,.mobile-nav-head,.dashboard footer,#pageDebtResume>.report-panel>.section-heading,#debtResumeSummary,#reloadDebtResume,#closeDebtDetail,#printDebtDetail,.nav-item,.button-cluster{display:none!important}
+  .app-shell,.dashboard,.app-layout,.app-content,.app-page,#pageDebtResume,.report-panel,#debtCustomerDetail{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:#fff!important}
+  #debtCustomerDetail{display:block!important}
+  #debtDetailBody .review-table-wrap{overflow:visible!important}
+  #debtDetailBody table{width:100%!important;border-collapse:collapse!important}
+  #debtDetailBody th,#debtDetailBody td{border:1px solid #bbb!important;padding:7px!important;color:#111!important}
+  #debtDetailHeading{font-size:20px!important}
+}
+@media print{
+  .app-page{display:none!important}
+  #pageDebtResume{display:block!important}
+}
