@@ -227,3 +227,6 @@ body{
 .resume-pagination button.active{background:#fff0f6;border-color:#e978a5;color:#c94f82;font-weight:700}
 .owner-correction-customer-row{grid-template-columns:minmax(0,2fr) minmax(100px,1fr) auto}
 .owner-correction-customer-row select{width:100%;min-width:0;padding:10px;border:1px solid #e7cbb7;border-radius:9px;background:#fff;color:#39291f}
+
+/* RC4.1.3: nama outlet dan ID pendamping pada Resume */
+.resume-outlet-id{display:block;margin-top:3px;font-size:10px;color:var(--muted);font-weight:400}

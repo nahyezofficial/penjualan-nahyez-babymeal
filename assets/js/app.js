@@ -317,7 +317,17 @@
         row.querySelector(".sold-input").value = Number(saved.jumlahTerjual) || 0;
         row.querySelector(".free-input").value = Number(saved.jumlahGratis) || 0;
       }
-      row.querySelectorAll("input").forEach(input => input.addEventListener("input", updateProductTotal));
+      row.querySelectorAll("input").forEach(input => {
+        input.addEventListener("focus", () => {
+          // Hilangkan angka nol awal agar ketikan pertama langsung menjadi nominal.
+          if (input.value === "0") input.value = "";
+        });
+        input.addEventListener("blur", () => {
+          if (input.value.trim() === "") input.value = "0";
+          updateProductTotal();
+        });
+        input.addEventListener("input", updateProductTotal);
+      });
       list.appendChild(row);
     });
     updateProductTotal();
@@ -693,7 +703,7 @@
     const body=$('resumeRows'),pager=$('resumePagination');if(!body||!pager)return;
     const total=resumeData.length,pages=Math.max(1,Math.ceil(total/RESUME_PAGE_SIZE));resumePage=Math.min(Math.max(1,resumePage),pages);
     const start=(resumePage-1)*RESUME_PAGE_SIZE,visible=resumeData.slice(start,start+RESUME_PAGE_SIZE);
-    body.innerHTML=visible.map(r=>{const status=String(r.statusLaporan||'DRAFT').toUpperCase();const cls=status==='FINAL'?'final':status==='MENUNGGU_PEMERIKSAAN'?'waiting':'';const action=`<button type="button" class="secondary-action owner-review-open" data-report-id="${escHtml(r.laporanId)}">${status==='MENUNGGU_PEMERIKSAAN'?'Periksa':'Lihat Detail'}</button>`;return `<tr><td>${escHtml(r.tanggal)}</td><td>${escHtml(r.outletId)}</td><td>${escHtml(r.laporanId)}</td><td><span class="resume-status ${cls}">${resumeStatusLabel(status)}</span></td><td>${formatRupiah(r.omzet)}</td><td>${formatRupiah(r.dailyFee)}</td><td>${action}</td></tr>`;}).join('');
+    body.innerHTML=visible.map(r=>{const status=String(r.statusLaporan||'DRAFT').toUpperCase();const cls=status==='FINAL'?'final':status==='MENUNGGU_PEMERIKSAAN'?'waiting':'';const action=`<button type="button" class="secondary-action owner-review-open" data-report-id="${escHtml(r.laporanId)}">${status==='MENUNGGU_PEMERIKSAAN'?'Periksa':'Lihat Detail'}</button>`;return `<tr><td>${escHtml(r.tanggal)}</td><td><strong>${escHtml(r.namaOutlet||r.outletId)}</strong><small class="resume-outlet-id">${escHtml(r.outletId)}</small></td><td>${escHtml(r.laporanId)}</td><td><span class="resume-status ${cls}">${resumeStatusLabel(status)}</span></td><td>${formatRupiah(r.omzet)}</td><td>${formatRupiah(r.dailyFee)}</td><td>${action}</td></tr>`;}).join('');
     pager.innerHTML=total?`<span>Menampilkan ${start+1}–${Math.min(start+visible.length,total)} dari ${total} laporan</span><button type="button" data-resume-page="prev" ${resumePage===1?'disabled':''}>‹ Sebelumnya</button>${Array.from({length:pages},(_,i)=>i+1).filter(n=>n===1||n===pages||Math.abs(n-resumePage)<=1).map(n=>`<button type="button" data-resume-page="${n}" class="${n===resumePage?'active':''}">${n}</button>`).join('')}<button type="button" data-resume-page="next" ${resumePage===pages?'disabled':''}>Berikutnya ›</button>`:'';
     syncResumeHorizontalNav();
   }
@@ -719,7 +729,7 @@
     panel.classList.remove('hidden');body.innerHTML='<div class="report-status">Memuat rincian laporan...</div>';statusBox.textContent='';approve.disabled=true;panel.scrollIntoView({behavior:'smooth',block:'start'});
     try{
       const r=await NahyezAPI.getReportDetails(laporanId);ownerCorrectionContext=r;const h=r.report||{};const state=String(r.statusLaporan||'').toUpperCase();
-      $('ownerReviewHeading').textContent=`Pemeriksaan ${h.NamaOutlet||r.outletId||'Laporan'}`;$('ownerReviewMeta').textContent=`${h.Tanggal||h.TanggalLaporan||''} · ${laporanId} · ${resumeStatusLabel(state)}`;
+      $('ownerReviewHeading').textContent=`Pemeriksaan ${h.NamaOutlet||r.namaOutlet||r.outletId||'Laporan'}`;$('ownerReviewMeta').textContent=`${h.Tanggal||h.TanggalLaporan||''} · ${h.NamaOutlet||r.namaOutlet||r.outletId||''} (${r.outletId||''}) · ${laporanId} · ${resumeStatusLabel(state)}`;
       const rows=(r.detail||[]).map(x=>`<tr><td>${escHtml(x.namaProduk)}</td><td>${x.jumlahTerjual}</td><td>${x.jumlahGratis}</td><td>${formatRupiah(x.subtotal)}</td></tr>`).join('')||'<tr><td colspan="4">Tidak ada rincian produk.</td></tr>';
       const payments=(r.payments||[]).map(x=>`<tr><td>${escHtml(x.JenisPembayaran)}</td><td>${formatRupiah(x.Nominal)}</td></tr>`).join('')||'<tr><td colspan="2">Tidak ada pembayaran non-tunai.</td></tr>';
       const debts=(r.debts||[]).map(x=>`<tr><td>${escHtml(x.NamaPelanggan||x.PelangganID)}</td><td>${formatRupiah(x.NominalUtang)}</td></tr>`).join('')||'<tr><td colspan="2">Tidak ada piutang baru.</td></tr>';
