@@ -84,6 +84,11 @@
       <section id="crewOpeningStockCard" class="crew-opening-stock hidden" aria-live="polite">
         <div class="crew-opening-stock-head"><div><span class="card-label">PERSEDIAAN HARI INI</span><h3>Stok Awal Outlet</h3><p id="crewOpeningStockMeta">Memuat stok awal...</p></div><span class="crew-stock-badge">HARI INI</span></div>
         <div id="crewOpeningStockGrid" class="crew-opening-stock-grid"><div class="crew-opening-stock-empty">Memuat data stok awal...</div></div>
+        <div class="crew-dashboard-modal"><span>UANG MODAL KEMBALIAN</span><strong id="crewModalAmount">Rp 0</strong></div>
+      </section>
+      <section id="crewDailyFeeCard" class="crew-daily-fee-card hidden" aria-live="polite">
+        <div><span class="card-label">PENDAPATAN HARIAN</span><h3>Daily Fee Hari Ini</h3><p id="crewDailyFeeMeta">Belum ada laporan yang disubmit.</p></div>
+        <strong id="crewDailyFeeAmount">Rp 0</strong>
       </section>
           </section>
           <section class="app-page" id="pageStock">
@@ -162,7 +167,7 @@
               <div class="section-heading"><div><p class="section-kicker">PIUTANG PELANGGAN</p><h3>Resume Piutang Pelanggan</h3><p>Daftar pelanggan yang masih memiliki saldo hutang.</p></div><span class="section-icon">Rp</span></div>
               <div class="resume-filters"><button id="reloadDebtResume" class="secondary-action" type="button">Muat Ulang</button><div id="debtResumeSummary" class="report-status" aria-live="polite">Memuat daftar piutang...</div></div>
               <div class="review-table-wrap"><table class="review-table"><thead><tr><th>Nama Pelanggan</th><th>Pelanggan ID</th><th>Outlet</th><th>Total Hutang</th><th>Aksi</th></tr></thead><tbody id="debtResumeRows"><tr><td colspan="5">Memuat...</td></tr></tbody></table></div>
-              <section id="debtCustomerDetail" class="owner-review-detail hidden" aria-live="polite"><div class="settings-subhead"><div><p class="section-kicker">RINCIAN PELANGGAN</p><h4 id="debtDetailHeading">Detail Hutang</h4><p id="debtDetailMeta"></p></div><div class="button-cluster"><button id="printDebtDetail" class="secondary-action" type="button">Cetak Rincian</button><button id="closeDebtDetail" class="secondary-action" type="button">Tutup</button></div></div><div id="debtDetailBody"></div></section>
+              <section id="debtCustomerDetail" class="owner-review-detail hidden" aria-live="polite"><div class="settings-subhead"><div><p class="section-kicker">RINCIAN PELANGGAN</p><h4 id="debtDetailHeading">Detail Hutang</h4><p id="debtDetailMeta"></p></div><div class="button-cluster"><button id="printDebtDetail" class="secondary-action" type="button">Download Excel</button><button id="closeDebtDetail" class="secondary-action" type="button">Tutup</button></div></div><div id="debtDetailBody"></div></section>
             </section>
           </section>
           <section class="app-page" id="pageSettings">

@@ -66,6 +66,7 @@
       : (user.idKaryawan || user.id || "—");
     $("profileOutlet").textContent = user.role === "OWNER" ? "Semua Outlet" : (user.outletNama || "—");
     $("crewOpeningStockCard").classList.toggle("hidden", user.role !== "KARYAWAN");
+    $("crewDailyFeeCard").classList.toggle("hidden", user.role !== "KARYAWAN");
     $("ownerReportPanel").classList.toggle("hidden", user.role !== "OWNER");
     $("crewComingCard").classList.add("hidden");
     document.querySelectorAll(".nav-item[data-page=\"pageSettings\"]").forEach(el => el.classList.toggle("hidden", user.role !== "OWNER"));
@@ -225,6 +226,11 @@
     try {
       const result = await NahyezAPI.getCrewOpeningStock();
       const items = Array.isArray(result.stok) ? result.stok : [];
+      $("crewModalAmount").textContent = formatRupiah(Number(result.modalKembalian)||0);
+      const dailyFeeEnabled = result.dailyFeeEnabled !== false;
+      $("crewDailyFeeCard").classList.toggle("hidden", !dailyFeeEnabled);
+      $("crewDailyFeeAmount").textContent = formatRupiah(result.laporanDisubmit ? (Number(result.dailyFee)||0) : 0);
+      $("crewDailyFeeMeta").textContent = result.laporanDisubmit ? "Laporan hari ini sudah disubmit." : "Belum ada laporan yang disubmit.";
       $("crewOpeningStockMeta").textContent = result.tanggal ? `Tanggal ${result.tanggal} · ${(window.currentNahyezUser||{}).outletNama||"Outlet Crew"}` : "Persediaan hari ini";
       const host = $("crewOpeningStockGrid"); host.replaceChildren();
       if (!result.tersimpan || !items.length) {
@@ -240,6 +246,10 @@
     } catch (error) {
       $("crewOpeningStockMeta").textContent = "Stok awal belum dapat dimuat.";
       $("crewOpeningStockGrid").innerHTML = '<div class="crew-opening-stock-empty">Data stok awal sementara tidak tersedia.</div>';
+      $("crewModalAmount").textContent = formatRupiah(0);
+      $("crewDailyFeeAmount").textContent = formatRupiah(0);
+      $("crewDailyFeeMeta").textContent = "Data laporan belum tersedia.";
+      $("crewDailyFeeCard").classList.add("hidden");
     }
   }
 
@@ -436,7 +446,7 @@
     const paidRows=(preview.payments||[]).map(p=>`<tr><td>${escHtml(p.namaPelanggan)}</td><td>${escHtml(p.pelangganId)}</td><td>${money(p.nominal)}</td></tr>`).join('');
     const transferRows=(preview.transferPlans||[]).map(t=>`<tr><td>${escHtml(t.route.asal)} → ${escHtml(t.route.tujuan)}</td><td>${t.totalCup}</td><td>${money(t.route.tarif)}</td></tr>`).join('');
     const stockRows=Object.entries(stock).map(([k,v])=>`<div class="review-stock"><span>${({bubur:'Bubur',puding:'Puding',nasitim:'Nasi Tim',oatmeal:'Oatmeal',abon:'Abon'})[k]||k}</span><strong>${v}</strong></div>`).join('');
-    $('reviewContent').innerHTML=`<div class="review-summary-grid"><div><small>Omzet Produk</small><strong>${money(preview.omzet)}</strong></div><div><small>QRIS</small><strong>${money(preview.qris)}</strong></div><div><small>Transfer</small><strong>${money(preview.transferPembayaran)}</strong></div><div><small>Piutang Baru</small><strong>${money(preview.totalDebt)}</strong></div><div><small>Pembayaran Piutang</small><strong>${money(preview.totalPaid)}</strong></div>${preview.dailyFeeEnabled!==false?`<div><small>Daily Fee</small><strong>${money(preview.dailyFee)}</strong></div>`:''}<div><small>Modal Kembalian</small><strong>${money(preview.modalKembalian)}</strong></div><div class="review-highlight"><small>Estimasi Setoran Tunai</small><strong>${money(preview.cash)}</strong></div></div><h4>Sisa Stok Setelah Transaksi</h4><div class="review-stock-grid">${stockRows}</div><h4>Rincian Produk</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Produk</th><th>Terjual</th><th>Gratis</th><th>Subtotal</th></tr></thead><tbody>${productRows}</tbody></table></div><h4>Piutang Baru</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Pelanggan</th><th>PelangganID</th><th>Nominal</th></tr></thead><tbody>${debtRows||'<tr><td colspan="3">Tidak ada piutang baru.</td></tr>'}</tbody></table></div><h4>Pembayaran Piutang Lama</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Pelanggan</th><th>PelangganID</th><th>Nominal</th></tr></thead><tbody>${paidRows||'<tr><td colspan="3">Tidak ada pembayaran piutang.</td></tr>'}</tbody></table></div><h4>Pengambilan Stok</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Rute</th><th>Jumlah Cup</th><th>Tarif Bensin</th></tr></thead><tbody>${transferRows||'<tr><td colspan="3">Tidak ada transfer stok.</td></tr>'}</tbody></table></div>${preview.dailyFeeEnabled!==false?'<h4>Perhitungan Daily Fee</h4><div class="review-list">'+`<span>Fee dasar</span><b>${money(fee.feeBase)}</b><span>Bonus cup bubur (${fee.totalCupBubur} × ${money(fee.bonusCup)})</span><b>${money(fee.bonusTotal)}</b><span>Bonus target (${fee.targets} target)</span><b>${money(fee.bonusTargetTotal)}</b><span>Bensin outlet</span><b>${money(fee.fuelOutlet)}</b><span>Bensin transfer</span><b>${money(fee.fuelTransfer)}</b></div>`:''}<p class="report-footnote">Outlet: ${escHtml(preview.outlet.namaOutlet)} · Tanggal: ${escHtml(preview.tanggal)} WIB · ID: ${escHtml(preview.laporanId)}</p>`;
+    $('reviewContent').innerHTML=`<div class="review-summary-grid"><div><small>Omzet Produk</small><strong>${money(preview.omzet)}</strong></div><div><small>QRIS</small><strong>${money(preview.qris)}</strong></div><div><small>Transfer</small><strong>${money(preview.transferPembayaran)}</strong></div><div><small>Piutang Baru</small><strong>${money(preview.totalDebt)}</strong></div><div><small>Pembayaran Piutang</small><strong>${money(preview.totalPaid)}</strong></div>${preview.dailyFeeEnabled!==false?`<div><small>Daily Fee</small><strong>${money(preview.dailyFee)}</strong></div>`:''}<div><small>Modal Kembalian</small><strong>${money(preview.modalKembalian)}</strong></div><div class="review-highlight"><small>Estimasi Setoran Tunai</small><strong>${money(preview.cash)}</strong></div></div><h4>Sisa Stok Setelah Transaksi</h4><div class="review-stock-grid">${stockRows}</div><h4>Rincian Produk</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Produk</th><th>Terjual</th><th>Gratis</th><th>Subtotal</th></tr></thead><tbody>${productRows}</tbody></table></div><h4>Piutang Baru</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Pelanggan</th><th>PelangganID</th><th>Nominal</th></tr></thead><tbody>${debtRows||'<tr><td colspan="3">Tidak ada piutang baru.</td></tr>'}</tbody></table></div><h4>Pembayaran Piutang Lama</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Pelanggan</th><th>PelangganID</th><th>Nominal</th></tr></thead><tbody>${paidRows||'<tr><td colspan="3">Tidak ada pembayaran piutang.</td></tr>'}</tbody></table></div><h4>Pengambilan Stok</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Rute</th><th>Jumlah Cup</th><th>Tarif Bensin</th></tr></thead><tbody>${transferRows||'<tr><td colspan="3">Tidak ada transfer stok.</td></tr>'}</tbody></table></div>${preview.dailyFeeEnabled!==false?'<h4>Perhitungan Daily Fee</h4><div class="review-list">'+`<span>Fee dasar</span><b>${money(fee.feeBase)}</b><span>Bonus cup bubur (${fee.totalCupBubur} × ${money(fee.bonusCup)})</span><b>${money(fee.bonusTotal)}</b><span>Bonus target (${fee.targets} target)</span><b>${money(fee.bonusTargetTotal)}</b><span>Bensin outlet</span><b>${money(fee.fuelOutlet)}</b><span>Bensin transfer</span><b>${money(fee.fuelTransfer)}</b>${Number(fee.dailyFeeRounding)>0?`<span>Pembulatan Daily Fee</span><b>${money(fee.dailyFeeRounding)}</b>`:''}</div>`:''}<p class="report-footnote">Outlet: ${escHtml(preview.outlet.namaOutlet)} · Tanggal: ${escHtml(preview.tanggal)} WIB · ID: ${escHtml(preview.laporanId)}</p>`;
   }
   function showReviewPage(){
     // Mode review menggantikan formulir input, bukan ditambahkan di bawahnya.
@@ -508,8 +518,13 @@
   async function finishSubmittedReport(){
     const isOwner=window.currentNahyezUser?.role==='OWNER';
     if(!isOwner){
-      $('reviewStatus').textContent='Laporan hari ini sudah berhasil disubmit dan tersimpan. Anda dapat keluar dari akun.';
       $('finishSubmittedReportButton').classList.add('hidden');
+      $('reportReviewPanel').classList.add('hidden');
+      $('reportWorkspace').classList.add('hidden');
+      activeReport=null; activeProducts=[]; lastTransactionPreview=null;
+      activatePage('pageDashboard');
+      await loadCrewOpeningStock();
+      window.scrollTo({top:0,behavior:'smooth'});
       return;
     }
     activeReport=null;
@@ -603,13 +618,45 @@
   }
   function setDebtStatus(message,type=""){const el=$("debtResumeSummary");if(el){el.textContent=message;el.className=`report-status ${type}`.trim();}}
   async function loadDebtResume(){if(window.currentNahyezUser?.role!=="OWNER")return;const body=$("debtResumeRows");body.innerHTML='<tr><td colspan="5">Memuat daftar piutang...</td></tr>';try{const r=await NahyezAPI.getDebtResume();body.innerHTML=(r.pelanggan||[]).map(x=>`<tr><td><strong>${escHtml(x.namaPelanggan)}</strong></td><td>${escHtml(x.pelangganId)}</td><td>${escHtml(x.outlet||"—")}</td><td><strong>${formatRupiah(x.saldo)}</strong></td><td><button type="button" class="secondary-action debt-detail-open" data-customer-id="${escHtml(x.pelangganId)}">View Detail</button></td></tr>`).join('')||'<tr><td colspan="5">Tidak ada pelanggan dengan hutang aktif.</td></tr>';setDebtStatus(`${r.jumlah||0} pelanggan masih memiliki total hutang ${formatRupiah(r.totalSaldo||0)}.`, 'success');}catch(e){body.innerHTML='<tr><td colspan="5">Gagal memuat piutang.</td></tr>';setDebtStatus(e.message||'Gagal memuat resume piutang.','error');}}
-  async function openDebtCustomerDetail(id){const panel=$("debtCustomerDetail");panel.classList.remove('hidden');$("debtDetailBody").innerHTML='<p>Memuat rincian...</p>';try{const r=await NahyezAPI.getDebtResume(id),p=r.pelanggan;$("debtDetailHeading").textContent=p.namaPelanggan;$("debtDetailMeta").textContent=`${p.pelangganId} · Saldo hutang ${formatRupiah(p.saldo)}`;const debts=(r.debtRows||[]).map(x=>`<tr><td>${escHtml(x.tanggal||'—')}</td><td>${escHtml(x.laporanId||'—')}</td><td>${formatRupiah(x.nominal)}</td></tr>`).join('')||'<tr><td colspan="3">Tidak ada catatan hutang.</td></tr>';const pays=(r.paymentRows||[]).map(x=>`<tr><td>${escHtml(x.tanggal||'—')}</td><td>${escHtml(x.laporanId||'—')}</td><td>${formatRupiah(x.nominal)}</td></tr>`).join('')||'<tr><td colspan="3">Belum ada pembayaran.</td></tr>';$("debtDetailBody").innerHTML=`<div class="review-summary-grid"><div><small>Total Hutang</small><strong>${formatRupiah(r.totalPiutang)}</strong></div><div><small>Total Pembayaran</small><strong>${formatRupiah(r.totalPembayaran)}</strong></div><div class="review-highlight"><small>Sisa Hutang</small><strong>${formatRupiah(p.saldo)}</strong></div></div><h4>Riwayat Hutang Masuk</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Tanggal</th><th>Laporan ID</th><th>Nominal</th></tr></thead><tbody>${debts}</tbody></table></div><h4>Riwayat Pembayaran</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Tanggal</th><th>Laporan ID</th><th>Nominal</th></tr></thead><tbody>${pays}</tbody></table></div>`;$("printDebtDetail").dataset.customerId=id;panel.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){$("debtDetailBody").textContent=e.message||'Gagal memuat rincian hutang.';}}
+  let activeDebtDetailExport = null;
+  async function openDebtCustomerDetail(id){
+    const panel=$("debtCustomerDetail");panel.classList.remove('hidden');$("debtDetailBody").innerHTML='<p>Memuat rincian...</p>';
+    try{
+      const r=await NahyezAPI.getDebtResume(id),p=r.pelanggan;activeDebtDetailExport=r;
+      $("debtDetailHeading").textContent=p.namaPelanggan;
+      $("debtDetailMeta").textContent=`${p.pelangganId} · Saldo hutang ${formatRupiah(p.saldo)}`;
+      const debts=(r.debtRows||[]).map(x=>`<tr><td>${escHtml(x.tanggal||'—')}</td><td>${escHtml(x.laporanId||'—')}</td><td>${formatRupiah(x.nominal)}</td></tr>`).join('')||'<tr><td colspan="3">Tidak ada catatan hutang.</td></tr>';
+      const pays=(r.paymentRows||[]).map(x=>`<tr><td>${escHtml(x.tanggal||'—')}</td><td>${escHtml(x.laporanId||'—')}</td><td>${formatRupiah(x.nominal)}</td></tr>`).join('')||'<tr><td colspan="3">Belum ada pembayaran.</td></tr>';
+      $("debtDetailBody").innerHTML=`<div class="review-summary-grid"><div><small>Total Hutang</small><strong>${formatRupiah(r.totalPiutang)}</strong></div><div><small>Total Pembayaran</small><strong>${formatRupiah(r.totalPembayaran)}</strong></div><div class="review-highlight"><small>Sisa Hutang</small><strong>${formatRupiah(p.saldo)}</strong></div></div><h4>Riwayat Hutang Masuk</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Tanggal</th><th>Laporan ID</th><th>Nominal</th></tr></thead><tbody>${debts}</tbody></table></div><h4>Riwayat Pembayaran</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Tanggal</th><th>Laporan ID</th><th>Nominal</th></tr></thead><tbody>${pays}</tbody></table></div>`;
+      $("printDebtDetail").dataset.customerId=id;panel.scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(e){activeDebtDetailExport=null;$("debtDetailBody").textContent=e.message||'Gagal memuat rincian hutang.';}
+  }
+  function downloadDebtDetailExcel(){
+    const r=activeDebtDetailExport;if(!r||!r.pelanggan)return;
+    const p=r.pelanggan,esc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const rows=[];
+    rows.push(['RESUME PIUTANG PELANGGAN']);
+    rows.push(['Nama Pelanggan',p.namaPelanggan]);
+    rows.push(['Pelanggan ID',p.pelangganId]);
+    rows.push(['Total Hutang',Number(r.totalPiutang)||0]);
+    rows.push(['Total Pembayaran',Number(r.totalPembayaran)||0]);
+    rows.push(['Sisa Hutang',Number(p.saldo)||0]);
+    rows.push([]);rows.push(['RIWAYAT HUTANG MASUK']);rows.push(['Tanggal','Laporan ID','Nominal']);
+    (r.debtRows||[]).forEach(x=>rows.push([x.tanggal||'',x.laporanId||'',Number(x.nominal)||0]));
+    rows.push([]);rows.push(['RIWAYAT PEMBAYARAN']);rows.push(['Tanggal','Laporan ID','Nominal']);
+    (r.paymentRows||[]).forEach(x=>rows.push([x.tanggal||'',x.laporanId||'',Number(x.nominal)||0]));
+    const table=rows.map((row,i)=>'<tr>'+row.map((v,j)=>{const numeric=typeof v==='number';return `<${i===0||String(row[0]||'').startsWith('RIWAYAT')?'th':'td'}${numeric?' style="mso-number-format:\#\,\#\#0"':''}>${numeric?v:esc(v)}</${i===0||String(row[0]||'').startsWith('RIWAYAT')?'th':'td'}>`;}).join('')+'</tr>').join('');
+    const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><style>body{font-family:Arial}table{border-collapse:collapse}td,th{border:1px solid #999;padding:6px}th{background:#f7dce8;font-weight:bold}</style></head><body><table>${table}</table></body></html>`;
+    const blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+    const safe=String(p.namaPelanggan||'Pelanggan').replace(/[^a-z0-9_-]+/gi,'_').replace(/^_+|_+$/g,'');a.href=url;a.download=`Resume_Piutang_${safe||'Pelanggan'}_${p.pelangganId}.xls`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+
   $("reloadDebtResume")?.addEventListener('click',loadDebtResume);
   $("debtResumeRows")?.addEventListener('click',e=>{const b=e.target.closest('.debt-detail-open');if(b)openDebtCustomerDetail(b.dataset.customerId);});
   $("closeDebtDetail")?.addEventListener('click',()=>$("debtCustomerDetail").classList.add('hidden'));
-  $("printDebtDetail")?.addEventListener('click',()=>{const panel=$("debtCustomerDetail");if(!panel.classList.contains('hidden'))window.print();});
+  $("printDebtDetail")?.addEventListener('click',()=>downloadDebtDetailExcel());
 
-  function renderDailyFeeOutletSettings(){const host=$("dailyFeeOutletList");host.replaceChildren();if(!dailyFeeOutletCache.length){host.innerHTML='<div class="report-status warning">Tidak ada outlet aktif.</div>';return;}dailyFeeOutletCache.forEach(x=>{const row=document.createElement('div');row.className='settings-row daily-fee-outlet-row';const info=document.createElement('div');const title=document.createElement('strong');title.textContent=x.namaOutlet;const meta=document.createElement('small');meta.textContent=`${x.outletId} · ${x.waktuPerubahan?`Diubah: ${x.waktuPerubahan}`:'Default: Aktif'}`;info.append(title,meta);const label=document.createElement('label');label.className='daily-fee-toggle';label.innerHTML=`<input type="checkbox" data-daily-fee-outlet="${escHtml(x.outletId)}" ${x.aktif?'checked':''}><span>Daily Fee Aktif</span>`;row.append(info,label);host.appendChild(row);});}
+  function renderDailyFeeOutletSettings(){const host=$("dailyFeeOutletList");host.replaceChildren();if(!dailyFeeOutletCache.length){host.innerHTML='<div class="report-status warning">Tidak ada outlet aktif.</div>';return;}dailyFeeOutletCache.forEach(x=>{const row=document.createElement('div');row.className='settings-row daily-fee-outlet-row';const info=document.createElement('div');const title=document.createElement('strong');title.textContent=x.namaOutlet;const meta=document.createElement('small');meta.textContent=`${x.outletId} · ${x.waktuPerubahan?`Diubah: ${x.waktuPerubahan}`:'Default: Aktif'}`;info.append(title,meta);const label=document.createElement('label');label.className='daily-fee-toggle';label.innerHTML=`<input type="checkbox" role="switch" aria-label="Daily Fee ${escHtml(x.namaOutlet)}" data-daily-fee-outlet="${escHtml(x.outletId)}" ${x.aktif?'checked':''}><span class="daily-fee-switch" aria-hidden="true"></span><em class="daily-fee-state">${x.aktif?'AKTIF':'NONAKTIF'}</em>`;const control=label.querySelector('input');control.addEventListener('change',()=>{label.querySelector('.daily-fee-state').textContent=control.checked?'AKTIF':'NONAKTIF';});row.append(info,label);host.appendChild(row);});}
   async function loadDailyFeeOutletSettings(){if(window.currentNahyezUser?.role!=='OWNER')return;try{const r=await NahyezAPI.getDailyFeeOutletSettings();dailyFeeOutletCache=r.daftarPengaturan||[];renderDailyFeeOutletSettings();setSettingsStatus('dailyFeeOutletStatus',`${dailyFeeOutletCache.filter(x=>x.aktif).length} dari ${dailyFeeOutletCache.length} outlet mengaktifkan Daily Fee.`,'success');}catch(e){setSettingsStatus('dailyFeeOutletStatus',e.message||'Gagal memuat pengaturan Daily Fee.','error');}}
   async function saveDailyFeeOutletSettings(){const daftarPengaturan=[...document.querySelectorAll('[data-daily-fee-outlet]')].map(el=>({outletId:el.dataset.dailyFeeOutlet,aktif:el.checked}));if(!daftarPengaturan.length)return;const btn=$("saveDailyFeeOutletButton");btn.disabled=true;try{await NahyezAPI.saveDailyFeeOutletSettings(daftarPengaturan);setSettingsStatus('dailyFeeOutletStatus','Pengaturan Daily Fee per outlet berhasil disimpan. Berlaku untuk laporan yang dibuat atau dikoreksi setelah ini.','success');await loadDailyFeeOutletSettings();}catch(e){setSettingsStatus('dailyFeeOutletStatus',e.message||'Gagal menyimpan pengaturan.','error');}finally{btn.disabled=false;}}
   $("reloadDailyFeeOutlet")?.addEventListener('click',loadDailyFeeOutletSettings);

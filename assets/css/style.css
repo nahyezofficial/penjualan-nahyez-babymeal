@@ -256,9 +256,15 @@ body{
 @media(max-width:360px){.info-card{padding:9px 7px}.info-card strong{font-size:10px}.card-label{font-size:7px}}
 
 /* RC4.1.5 — Resume Piutang & konfigurasi Daily Fee per outlet */
-.daily-fee-toggle{display:flex!important;align-items:center;justify-content:flex-end;gap:9px;color:var(--ink)!important;font-size:12px!important;font-weight:700!important;cursor:pointer}
-.daily-fee-toggle input{width:20px!important;height:20px!important;margin:0!important;accent-color:#d95f91;cursor:pointer}
-.daily-fee-toggle span{white-space:nowrap}
+.daily-fee-toggle{display:inline-flex!important;align-items:center;justify-content:flex-end;gap:9px;color:var(--ink)!important;font-size:12px!important;font-weight:700!important;cursor:pointer;white-space:nowrap}
+.daily-fee-toggle input{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.daily-fee-switch{position:relative;display:inline-block;width:48px;height:27px;flex:none;border-radius:99px;background:#cbd0d6;box-shadow:inset 0 1px 3px rgba(0,0,0,.13);transition:background .22s ease,box-shadow .22s ease}
+.daily-fee-switch::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.2);transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.daily-fee-toggle input:checked+.daily-fee-switch{background:linear-gradient(110deg,#ee8bb3,#d94f8a);box-shadow:inset 0 1px 3px rgba(128,25,73,.18),0 2px 8px rgba(217,79,138,.18)}
+.daily-fee-toggle input:checked+.daily-fee-switch::after{transform:translateX(21px)}
+.daily-fee-toggle input:focus-visible+.daily-fee-switch{outline:3px solid rgba(217,79,138,.25);outline-offset:3px}
+.daily-fee-state{min-width:62px;font-size:10px;font-style:normal;font-weight:800;letter-spacing:.45px;color:#8d9299;text-align:left}
+.daily-fee-toggle input:checked~.daily-fee-state{color:#c94f82}
 #debtCustomerDetail{margin-top:20px}
 #debtCustomerDetail h4{margin:20px 0 9px;color:var(--ink);font:700 14px Manrope,sans-serif}
 #debtDetailBody .review-summary-grid{margin:14px 0}
@@ -278,3 +284,7 @@ body{
   .app-page{display:none!important}
   #pageDebtResume{display:block!important}
 }
+
+/* RC4.1.6: Crew dashboard modal and daily fee cards */
+.crew-dashboard-modal{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:13px 15px;border:1px solid #f1e3e9;border-radius:12px;background:#fff7fb}.crew-dashboard-modal span{font-size:10px;font-weight:800;letter-spacing:.8px;color:#927b87}.crew-dashboard-modal strong{font:800 17px Manrope;color:#c94f82;white-space:nowrap}.crew-daily-fee-card{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:12px;padding:17px 20px;border:1px solid #f0d8e3;border-radius:16px;background:linear-gradient(110deg,#fff,#fff2f7);box-shadow:0 8px 22px rgba(80,45,60,.04)}.crew-daily-fee-card h3{margin:0 0 4px;font:800 16px Manrope;color:var(--ink)}.crew-daily-fee-card p{margin:0;font-size:11px;color:var(--muted)}.crew-daily-fee-card>strong{font:800 22px Manrope;color:#c94f82;white-space:nowrap}
+@media(max-width:760px){.crew-dashboard-modal{padding:10px 11px}.crew-dashboard-modal strong{font-size:15px}.crew-daily-fee-card{padding:14px}.crew-daily-fee-card>strong{font-size:18px}}
