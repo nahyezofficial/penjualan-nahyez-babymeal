@@ -633,22 +633,30 @@
   }
   function downloadDebtDetailExcel(){
     const r=activeDebtDetailExport;if(!r||!r.pelanggan)return;
-    const p=r.pelanggan,esc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    const rows=[];
-    rows.push(['RESUME PIUTANG PELANGGAN']);
-    rows.push(['Nama Pelanggan',p.namaPelanggan]);
-    rows.push(['Pelanggan ID',p.pelangganId]);
-    rows.push(['Total Hutang',Number(r.totalPiutang)||0]);
-    rows.push(['Total Pembayaran',Number(r.totalPembayaran)||0]);
-    rows.push(['Sisa Hutang',Number(p.saldo)||0]);
-    rows.push([]);rows.push(['RIWAYAT HUTANG MASUK']);rows.push(['Tanggal','Laporan ID','Nominal']);
+    if(!window.XLSX){setDebtStatus('Komponen Excel belum termuat. Periksa koneksi internet lalu muat ulang halaman.','error');return;}
+    const p=r.pelanggan;
+    const rows=[
+      ['RESUME PIUTANG PELANGGAN'],
+      ['Nama Pelanggan',p.namaPelanggan||''],
+      ['Pelanggan ID',p.pelangganId||''],
+      ['Total Hutang',Number(r.totalPiutang)||0],
+      ['Total Pembayaran',Number(r.totalPembayaran)||0],
+      ['Sisa Hutang',Number(p.saldo)||0],
+      [],
+      ['RIWAYAT HUTANG MASUK'],
+      ['Tanggal','Laporan ID','Nominal']
+    ];
     (r.debtRows||[]).forEach(x=>rows.push([x.tanggal||'',x.laporanId||'',Number(x.nominal)||0]));
-    rows.push([]);rows.push(['RIWAYAT PEMBAYARAN']);rows.push(['Tanggal','Laporan ID','Nominal']);
+    rows.push([],['RIWAYAT PEMBAYARAN'],['Tanggal','Laporan ID','Nominal']);
     (r.paymentRows||[]).forEach(x=>rows.push([x.tanggal||'',x.laporanId||'',Number(x.nominal)||0]));
-    const table=rows.map((row,i)=>'<tr>'+row.map((v,j)=>{const numeric=typeof v==='number';return `<${i===0||String(row[0]||'').startsWith('RIWAYAT')?'th':'td'}${numeric?' style="mso-number-format:\#\,\#\#0"':''}>${numeric?v:esc(v)}</${i===0||String(row[0]||'').startsWith('RIWAYAT')?'th':'td'}>`;}).join('')+'</tr>').join('');
-    const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><style>body{font-family:Arial}table{border-collapse:collapse}td,th{border:1px solid #999;padding:6px}th{background:#f7dce8;font-weight:bold}</style></head><body><table>${table}</table></body></html>`;
-    const blob=new Blob(['\ufeff',html],{type:'application/vnd.ms-excel;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');
-    const safe=String(p.namaPelanggan||'Pelanggan').replace(/[^a-z0-9_-]+/gi,'_').replace(/^_+|_+$/g,'');a.href=url;a.download=`Resume_Piutang_${safe||'Pelanggan'}_${p.pelangganId}.xls`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:24},{wch:28},{wch:18}];
+    // Keep monetary values numeric so Excel can calculate, sort, and format them.
+    rows.forEach((row,ri)=>row.forEach((v,ci)=>{if(typeof v==='number'&&Number.isFinite(v)){const cell=XLSX.utils.encode_cell({r:ri,c:ci});if(ws[cell])ws[cell].z='"Rp" #,##0';}}));
+    ws['!autofilter']={ref:`A9:C${Math.max(9,rows.length)}`};
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Rincian Piutang');
+    const safe=String(p.namaPelanggan||'Pelanggan').replace(/[^a-z0-9_-]+/gi,'_').replace(/^_+|_+$/g,'');
+    XLSX.writeFile(wb,`Resume_Piutang_${safe||'Pelanggan'}_${p.pelangganId}.xlsx`,{bookType:'xlsx',compression:true});
   }
 
   $("reloadDebtResume")?.addEventListener('click',loadDebtResume);
