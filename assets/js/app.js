@@ -16,6 +16,26 @@
   const loginView = $("loginView"), dashboardView = $("dashboardView");
   const ownerForm = $("ownerForm"), staffForm = $("staffForm");
   let activeMode = "owner", stream = null, scanTimer = null, scanBusy = false;
+  let ownerWeeklyChart = null, ownerMonthlyChart = null, ownerAnalyticsTimer = null;
+  const chartPalette = ["#e879a5","#4f8fc9","#56a88b","#e6a34a","#8b78c9","#d66d62","#54aeb7","#9aab50","#b978a8","#718096","#d18a55","#5d7bd5"];
+  function renderOwnerLineChart(canvasId, labels, outlets, key) {
+    const canvas=$(canvasId); if(!canvas || !window.Chart) return null;
+    const datasets=outlets.map((o,i)=>({label:o.namaOutlet||o.outletId,data:o[key]||[],borderColor:chartPalette[i%chartPalette.length],backgroundColor:chartPalette[i%chartPalette.length],borderWidth:2.5,pointRadius:3,pointHoverRadius:5,tension:.28,fill:false}));
+    const old=canvasId==='weeklySalesChart'?ownerWeeklyChart:ownerMonthlyChart;if(old)old.destroy();
+    const chart=new Chart(canvas,{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8,padding:14}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatRupiah(ctx.parsed.y||0)}`}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>{const n=Number(v)||0;return n>=1000000?`Rp ${(n/1000000).toFixed(1)} jt`:n>=1000?`Rp ${(n/1000).toFixed(0)} rb`:`Rp ${n}`;}}},x:{grid:{display:false}}}}});
+    if(canvasId==='weeklySalesChart')ownerWeeklyChart=chart;else ownerMonthlyChart=chart;return chart;
+  }
+  async function loadOwnerDashboardAnalytics(){
+    if(window.currentNahyezUser?.role!=="OWNER")return;
+    const panel=$("ownerAnalytics");if(!panel)return;panel.classList.remove("hidden");$("ownerAnalyticsStatus").textContent="Memuat data omzet...";
+    try{const r=await NahyezAPI.getOwnerDashboardAnalytics();const outlets=Array.isArray(r.outlets)?r.outlets:[];
+      renderOwnerLineChart("weeklySalesChart",r.labelsWeek||["Sen","Sel","Rab","Kam","Jum","Sab","Min"],outlets,"weekly");
+      renderOwnerLineChart("monthlySalesChart",r.labelsMonth||[],outlets,"monthly");
+      $("weeklyChartPeriod").textContent=`${r.weekStart||""} – ${r.weekEnd||""}`;$("monthlyChartYear").textContent=String(r.year||"");
+      $("ownerAnalyticsMeta").textContent=`${outlets.length} outlet aktif · omzet dari laporan yang sudah disubmit`;
+      $("ownerAnalyticsStatus").textContent=outlets.length?"Grafik diperbarui dari laporan yang berhasil disubmit.":"Belum ada outlet aktif untuk ditampilkan.";
+    }catch(e){$("ownerAnalyticsStatus").textContent=e.message||"Data grafik belum dapat dimuat.";$("ownerAnalyticsStatus").className="report-status error";}
+  }
 
   function showLoading(message = "Memverifikasi akun...") {
     $("loadingText").textContent = message;
@@ -67,6 +87,8 @@
     $("profileOutlet").textContent = user.role === "OWNER" ? "Semua Outlet" : (user.outletNama || "—");
     $("crewOpeningStockCard").classList.toggle("hidden", user.role !== "KARYAWAN");
     $("crewDailyFeeCard").classList.toggle("hidden", user.role !== "KARYAWAN");
+    $("ownerAnalytics").classList.toggle("hidden", user.role !== "OWNER");
+    if(user.role === "OWNER"){ loadOwnerDashboardAnalytics(); if(ownerAnalyticsTimer)clearInterval(ownerAnalyticsTimer); ownerAnalyticsTimer=setInterval(loadOwnerDashboardAnalytics,5*60*1000); } else if(ownerAnalyticsTimer){clearInterval(ownerAnalyticsTimer);ownerAnalyticsTimer=null;}
     $("ownerReportPanel").classList.toggle("hidden", user.role !== "OWNER");
     $("crewComingCard").classList.add("hidden");
     document.querySelectorAll(".nav-item[data-page=\"pageSettings\"]").forEach(el => el.classList.toggle("hidden", user.role !== "OWNER"));
@@ -843,7 +865,7 @@
     try{
       const r=await NahyezAPI.getReportDetails(laporanId);ownerCorrectionContext=r;const h=r.report||{};const state=String(r.statusLaporan||'').toUpperCase();
       $('ownerReviewHeading').textContent=`Pemeriksaan ${h.NamaOutlet||r.namaOutlet||r.outletId||'Laporan'}`;$('ownerReviewMeta').textContent=`${h.Tanggal||h.TanggalLaporan||''} · ${h.NamaOutlet||r.namaOutlet||r.outletId||''} (${r.outletId||''}) · ${laporanId} · ${resumeStatusLabel(state)}`;
-      const rows=(r.detail||[]).map(x=>`<tr><td>${escHtml(x.namaProduk)}</td><td>${x.jumlahTerjual}</td><td>${x.jumlahGratis}</td><td>${formatRupiah(x.subtotal)}</td></tr>`).join('')||'<tr><td colspan="4">Tidak ada rincian produk.</td></tr>';
+      const rows=(r.detail||[]).map(x=>`<tr><td>${escHtml(x.namaProduk)}</td><td>${Number((r.openingStock||{})[x.produkId])||0}</td><td>${x.jumlahTerjual}</td><td>${x.jumlahGratis}</td><td>${formatRupiah(x.subtotal)}</td></tr>`).join('')||'<tr><td colspan="5">Tidak ada rincian produk.</td></tr>';
       const payments=(r.payments||[]).map(x=>`<tr><td>${escHtml(x.JenisPembayaran)}</td><td>${formatRupiah(x.Nominal)}</td></tr>`).join('')||'<tr><td colspan="2">Tidak ada pembayaran non-tunai.</td></tr>';
       const debts=(r.debts||[]).map(x=>`<tr><td>${escHtml(x.NamaPelanggan||x.PelangganID)}</td><td>${formatRupiah(x.NominalUtang)}</td></tr>`).join('')||'<tr><td colspan="2">Tidak ada piutang baru.</td></tr>';
       const paid=(r.debtPayments||[]).map(x=>`<tr><td>${escHtml(x.PelangganID)}</td><td>${formatRupiah(x.NominalPembayaran)}</td></tr>`).join('')||'<tr><td colspan="2">Tidak ada pembayaran piutang.</td></tr>';
@@ -851,12 +873,12 @@
       const stockLabels={bubur:'Bubur',puding:'Puding',nasitim:'Nasi Tim',oatmeal:'Oatmeal',abon:'Abon'};
       const stockHtml=r.stockSnapshot?`<h4>Sisa Stok Setelah Transaksi</h4><div class="review-stock-grid">${Object.entries(r.stockSnapshot).map(([k,v])=>`<div class="review-stock"><span>${stockLabels[k]||escHtml(k)}</span><strong>${Number(v)||0}</strong></div>`).join('')}</div>`:'<div class="report-status warning">Snapshot sisa stok belum tersedia untuk laporan ini.</div>';
       body.innerHTML=`<div class="info-grid"><article class="info-card"><span class="card-label">OMZET</span><strong>${formatRupiah(h.TotalOmzet)}</strong></article><article class="info-card"><span class="card-label">QRIS</span><strong>${formatRupiah(h.TotalQRIS)}</strong></article><article class="info-card"><span class="card-label">TRANSFER</span><strong>${formatRupiah(h.TotalTransfer)}</strong></article><article class="info-card"><span class="card-label">PIUTANG BARU</span><strong>${formatRupiah(h.TotalUtangBaru)}</strong></article><article class="info-card"><span class="card-label">PEMBAYARAN PIUTANG</span><strong>${formatRupiah(h.TotalPembayaranUtang)}</strong></article>${r.dailyFeeEnabled!==false?`<article class="info-card"><span class="card-label">DAILY FEE</span><strong>${formatRupiah(h.TotalDailyFee)}</strong></article>`:''}<article class="info-card"><span class="card-label">SETORAN TUNAI</span><strong>${formatRupiah(h.SetoranTunai)}</strong></article></div>${stockHtml}
-      <h4>Rincian Produk</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Produk</th><th>Terjual</th><th>Gratis</th><th>Subtotal</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <h4>Rincian Produk</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Produk</th><th>Stok Awal</th><th>Terjual</th><th>Gratis</th><th>Subtotal</th></tr></thead><tbody>${rows}</tbody></table></div>
       <h4>Pembayaran Non-Tunai</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Metode</th><th>Nominal</th></tr></thead><tbody>${payments}</tbody></table></div>
       <h4>Piutang Baru</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Pelanggan</th><th>Nominal</th></tr></thead><tbody>${debts}</tbody></table></div>
       <h4>Pembayaran Piutang</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Pelanggan ID</th><th>Nominal</th></tr></thead><tbody>${paid}</tbody></table></div>
       <h4>Pengambilan Stok</h4><div class="review-table-wrap"><table class="review-table"><thead><tr><th>Rute</th><th>Jumlah Cup</th><th>Tarif Bensin</th></tr></thead><tbody>${transfers}</tbody></table></div>
-      <div class="report-status">Catatan Crew: ${escHtml(h.Catatan||'—')}</div>`;
+      <div class="crew-note-highlight"><span class="crew-note-title">✎ CATATAN CREW</span><p>${escHtml(h.Catatan||'Tidak ada catatan dari Crew.')}</p></div>`;
       approve.dataset.reportId=laporanId;approve.classList.toggle('hidden',state!=='MENUNGGU_PEMERIKSAAN');approve.disabled=state!=='MENUNGGU_PEMERIKSAAN';const correctionToggle=$('ownerCorrectionToggle');if(correctionToggle){correctionToggle.classList.toggle('hidden',state!=='MENUNGGU_PEMERIKSAAN');correctionToggle.dataset.reportId=laporanId;}const correctionPanel=$('ownerCorrectionPanel');if(correctionPanel){correctionPanel.classList.add('hidden');correctionPanel.innerHTML='';}
       statusBox.textContent=state==='MENUNGGU_PEMERIKSAAN'?'Periksa seluruh data. Persetujuan akan mengunci laporan menjadi FINAL.':'Laporan ini bukan antrean persetujuan aktif; hanya dapat dilihat.';statusBox.className='report-status '+(state==='MENUNGGU_PEMERIKSAAN'?'success':'warning');
     }catch(e){body.innerHTML='<div class="report-status error">Gagal memuat detail laporan.</div>';statusBox.textContent=e.message||'Terjadi kesalahan.';statusBox.className='report-status error';}

@@ -67,6 +67,7 @@
     getActiveOutlets: () => request("/api/outlet/aktif"),
     getDailyPreparation: outletId => request(`/api/persiapan-harian${outletId ? `?outletId=${encodeURIComponent(outletId)}` : ""}`),
     getCrewOpeningStock: () => request("/api/dashboard/stok-awal"),
+    getOwnerDashboardAnalytics: () => request("/api/dashboard/analytics"),
     saveDailyPreparation: data => request("/api/persiapan-harian", { method: "POST", body: data }),
     getOutletFuelSettings: () => request("/api/pengaturan/bensin-outlet"),
     saveOutletFuelSettings: daftarTarif => request("/api/pengaturan/bensin-outlet", { method: "POST", body: { daftarTarif } }),

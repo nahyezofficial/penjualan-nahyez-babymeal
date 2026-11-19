@@ -90,6 +90,12 @@
         <div><span class="card-label">PENDAPATAN HARIAN</span><h3>Daily Fee Hari Ini</h3><p id="crewDailyFeeMeta">Belum ada laporan yang disubmit.</p></div>
         <strong id="crewDailyFeeAmount">Rp 0</strong>
       </section>
+      <section id="ownerAnalytics" class="owner-analytics hidden">
+        <div class="section-heading"><div><p class="section-kicker">ANALISIS PENJUALAN</p><h3>Performa Seluruh Outlet</h3><p id="ownerAnalyticsMeta">Memuat data omzet outlet aktif...</p></div><span class="section-icon">⌁</span></div>
+        <article class="analytics-card"><div class="analytics-card-head"><div><h3>Omzet Mingguan</h3><p>Senin sampai Minggu · Minggu berjalan</p></div><span id="weeklyChartPeriod" class="analytics-period">—</span></div><div class="analytics-chart-wrap"><canvas id="weeklySalesChart" aria-label="Grafik omzet mingguan semua outlet"></canvas></div></article>
+        <article class="analytics-card"><div class="analytics-card-head"><div><h3>Omzet Bulanan</h3><p>Januari sampai Desember · Tahun berjalan</p></div><span id="monthlyChartYear" class="analytics-period">—</span></div><div class="analytics-chart-wrap"><canvas id="monthlySalesChart" aria-label="Grafik omzet bulanan semua outlet"></canvas></div></article>
+        <p id="ownerAnalyticsStatus" class="report-status" aria-live="polite"></p>
+      </section>
           </section>
           <section class="app-page" id="pageStock">
             <section class="report-panel">
@@ -210,6 +216,7 @@
   <script src="assets/js/config.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="assets/js/app.js"></script>
 </body>
 </html>
