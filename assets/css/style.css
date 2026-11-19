@@ -291,3 +291,22 @@ body{
 
 /* RC4.2 Owner analytics and review emphasis */
 .owner-analytics{display:grid;gap:16px;margin-top:20px}.analytics-card{background:#fff;border:1px solid #f0dce5;border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(107,54,78,.06)}.analytics-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.analytics-card-head h3{margin:0;color:#573448;font-size:16px}.analytics-card-head p{margin:5px 0 0;color:#8b7781;font-size:12px}.analytics-period{white-space:nowrap;border-radius:999px;background:#fff0f5;color:#a94e76;padding:7px 10px;font-size:11px;font-weight:700}.analytics-chart-wrap{height:310px;position:relative;width:100%}.crew-note-highlight{margin-top:18px;border:2px solid #d96b96;border-left:6px solid #d96b96;border-radius:12px;background:#fff5f8;padding:14px 16px;color:#63354a}.crew-note-title{display:block;font-size:12px;font-weight:900;letter-spacing:.07em;color:#ad426f}.crew-note-highlight p{margin:8px 0 0;font-weight:800;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}@media(max-width:640px){.analytics-card{padding:13px}.analytics-chart-wrap{height:260px}.analytics-card-head{flex-direction:column}.analytics-period{align-self:flex-start}}
+
+
+/* RC4.2.1 — Nahyez SalesHub login identity and version label */
+.brand-panel h1{font-size:clamp(38px,4.2vw,54px);line-height:1.08;letter-spacing:-1.8px}
+.brand-panel h1 span{color:#fff0f6}
+.brand-subtitle{margin:12px 0 0;font-size:11px;font-weight:800;letter-spacing:2.2px;color:rgba(255,255,255,.9)}
+.mobile-brand{align-items:center;gap:13px}
+.mobile-brand-copy{display:flex;flex-direction:column;gap:5px;line-height:1.2}
+.mobile-brand-copy strong{font:800 15px Manrope,sans-serif;letter-spacing:1.25px;color:#49333f}
+.mobile-brand-copy span{font-size:9px;font-weight:800;letter-spacing:1.55px;color:#bd6c91}
+.login-version{margin:24px 0 0;text-align:center;font-size:10px;font-weight:700;letter-spacing:.55px;color:#b19ba7}
+@media(max-width:760px){
+  .form-panel{padding:28px 24px 24px}
+  .mobile-brand{margin-bottom:32px}
+  .mobile-brand .brand-logo.small{width:52px;height:48px}
+  .mobile-brand-copy strong{font-size:14px}
+  .mobile-brand-copy span{font-size:8px;letter-spacing:1.25px}
+  .login-version{margin-top:22px;padding-bottom:2px}
+}
