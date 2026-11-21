@@ -33,7 +33,17 @@
       renderOwnerLineChart("monthlySalesChart",r.labelsMonth||[],outlets,"monthly");
       $("weeklyChartPeriod").textContent=`${r.weekStart||""} – ${r.weekEnd||""}`;$("monthlyChartYear").textContent=String(r.year||"");
       $("ownerAnalyticsMeta").textContent=`${outlets.length} outlet aktif · omzet dari laporan yang sudah disubmit`;
-      $("ownerAnalyticsStatus").textContent=outlets.length?"Grafik diperbarui dari laporan yang berhasil disubmit.":"Belum ada outlet aktif untuk ditampilkan.";
+      // Kartu revenue menjumlahkan seri per outlet pada tanggal dan bulan berjalan.
+      const todayKey=String(r.today||"");
+      const dayIndex=todayKey?((new Date(todayKey+"T00:00:00Z").getUTCDay()+6)%7):-1;
+      const monthIndex=todayKey?Number(todayKey.slice(5,7))-1:-1;
+      const dailyTotal=dayIndex>=0?outlets.reduce((sum,o)=>sum+(Number((o.weekly||[])[dayIndex])||0),0):0;
+      const monthlyTotal=monthIndex>=0?outlets.reduce((sum,o)=>sum+(Number((o.monthly||[])[monthIndex])||0),0):0;
+      $("ownerDailyRevenue").textContent=formatRupiah(dailyTotal);
+      $("ownerMonthlyRevenue").textContent=formatRupiah(monthlyTotal);
+      $("ownerDailyRevenueMeta").textContent=todayKey?`Akumulasi seluruh outlet aktif · ${todayKey}`:"Data tanggal hari ini belum tersedia.";
+      $("ownerMonthlyRevenueMeta").textContent=monthIndex>=0?`Akumulasi seluruh outlet aktif · ${r.labelsMonth?.[monthIndex]||"Bulan berjalan"} ${r.year||todayKey.slice(0,4)}`:"Data bulan berjalan belum tersedia.";
+      $("ownerAnalyticsStatus").textContent=outlets.length?"Grafik dan ringkasan revenue diperbarui dari laporan yang berhasil disubmit.":"Belum ada outlet aktif untuk ditampilkan.";
     }catch(e){$("ownerAnalyticsStatus").textContent=e.message||"Data grafik belum dapat dimuat.";$("ownerAnalyticsStatus").className="report-status error";}
   }
 

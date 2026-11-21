@@ -310,3 +310,5 @@ body{
   .mobile-brand-copy span{font-size:8px;letter-spacing:1.25px}
   .login-version{margin-top:22px;padding-bottom:2px}
 }
+
+.owner-revenue-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:2px}.owner-revenue-card{display:flex;align-items:center;justify-content:space-between;gap:18px;min-width:0;background:linear-gradient(135deg,#fff 0%,#fff7fa 100%);border:1px solid #efd8e3;border-radius:18px;padding:20px;box-shadow:0 8px 24px rgba(107,54,78,.06)}.owner-revenue-card h3{margin:5px 0;color:#573448;font-size:16px}.owner-revenue-card p{margin:4px 0 0;color:#8b7781;font-size:12px}.owner-revenue-card>strong{flex-shrink:0;color:#c94f83;font-size:clamp(18px,2.2vw,25px);font-weight:900;white-space:nowrap}@media(max-width:640px){.owner-revenue-summary{grid-template-columns:1fr;gap:10px}.owner-revenue-card{padding:15px}.owner-revenue-card>strong{font-size:19px}}
